@@ -17,5 +17,8 @@ namespace jc
      * through move semantics to avoid unnecessary copies.
     */
     std::string remove_comments(std::string&& buffer);
+
+    // TODO: add doxygen doc here
+    std::string minify(std::string&& buffer);
   }
 }

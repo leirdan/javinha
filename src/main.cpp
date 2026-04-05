@@ -32,7 +32,8 @@ int main(int argc, char *argv[])
   f_stream.close();
 
   // TODO: add some logs
-  std::string new_buffer = pre::remove_comments(std::move(program_buff));
+  std::string buffer1 = pre::remove_comments(std::move(program_buff));
+  std::string new_buffer = pre::minify(std::move(buffer1));
   u64 size = new_buffer.length();
   std::ofstream o_stream(output_file);
   for (u64 i = 0; i < size; i++) 
