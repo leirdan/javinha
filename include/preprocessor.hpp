@@ -18,7 +18,18 @@ namespace jc
     */
     std::string remove_comments(std::string&& buffer);
 
-    // TODO: add doxygen doc here
+    /** 
+     * \brief Method responsible for minify the source code.
+     *
+     * During the preprocessor phase the compiler must remove all the
+     * special characters and empty spaces without breaking the valid tokens.
+     * For instance, the compiler must perform the following transformation:
+     * From "class     A  { private     int [] b  }"
+     * to "class A{private int[]b}"
+     *
+     * @param buffer String containing the source code without the comments.
+     * Must be passed through move semantics to avoid unnecessary copies.
+    */
     std::string minify(std::string&& buffer);
   }
 }
