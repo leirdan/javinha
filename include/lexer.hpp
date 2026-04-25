@@ -8,9 +8,9 @@ namespace jc {
 class Lexer {
 private:
   std::string input;
-  size_t pos = 0;
-  size_t line = 1;
-  size_t col = 1;
+  uint32_t pos = 0;
+  uint32_t line = 1;
+  uint32_t col = 1;
 
   SymbolTable symbols;
 
@@ -29,7 +29,7 @@ public:
   Lexer(std::string input);
 
   std::vector<Token> tokenize();
-  const SymbolTable& get_symbols() const;
+  SymbolTable&& move_symbols();
 };
 
 }
