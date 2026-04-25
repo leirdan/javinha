@@ -53,7 +53,6 @@ int main(int argc, char *argv[])
              << ") [linha " << t.line << "]\n";
   }
 
-  // imprimir tabela de símbolos
   o_stream << "\nSYMBOL TABLE:\n";
   for (const auto& [k, v] : symbols.get_all()) {
     o_stream << v.name

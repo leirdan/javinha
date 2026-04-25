@@ -1,4 +1,5 @@
 #include "lexer.hpp"
+#include "types.hpp"
 #include <cctype>
 #include <unordered_map>
 #include <iostream>
@@ -24,7 +25,6 @@ static std::unordered_map<std::string, TokenType> keywords = {
 
 Lexer::Lexer(std::string input) : input(std::move(input)) {}
 
-// Utils
 char Lexer::peek() const {
   if (pos >= input.size()) return '\0';
   return input[pos];
@@ -65,8 +65,8 @@ std::string suggest(const std::string& wrong,
 
 // Identifier: [a-zA-Z_][a-zA-Z0-9_]*
 Token Lexer::identifier() {
-  uint32_t start = pos;
-  uint32_t start_col = col;
+  u32 start = pos;
+  u32 start_col = col;
 
   while (std::isalnum(peek()) || peek() == '_') {
     advance();
@@ -84,8 +84,8 @@ Token Lexer::identifier() {
 
 // Number: [0-9]+(\.[0-9]+)?
 Token Lexer::number() {
-  uint32_t start = pos;
-  uint32_t start_col = col;
+  u32 start = pos;
+  u32 start_col = col;
 
   while (std::isdigit(peek())) advance();
 
@@ -104,10 +104,10 @@ Token Lexer::number() {
 
 // String: "([^"\\]|\\.)*"
 Token Lexer::string() {
-  uint32_t start_col = col;
+  u32 start_col = col;
   advance(); // consume "
 
-  uint32_t start = pos;
+  u32 start = pos;
 
   while (peek() != '"' && peek() != '\0') {
     if (peek() == '\\') advance();
@@ -123,11 +123,10 @@ Token Lexer::string() {
 
 // Operator or Delimiter
 Token Lexer::op_or_delim() {
-  uint32_t start_col = col;
+  u32 start_col = col;
   char c = advance();
   std::string lex(1, c);
 
-  // operadores compostos
   if ((c == '=' && peek() == '=') ||
       (c == '!' && peek() == '=') ||
       (c == '<' && peek() == '=') ||
@@ -149,7 +148,6 @@ Token Lexer::op_or_delim() {
   return {TokenType::OPERATOR, lex, line, start_col};
 }
 
-// Tokenize the input
 std::vector<Token> Lexer::tokenize() {
   std::vector<Token> tokens;
 
@@ -163,8 +161,7 @@ std::vector<Token> Lexer::tokenize() {
       tokens.push_back(identifier());
     }
     else if (std::isdigit(c)) {
-      // checar erro tipo: 123abc
-      uint32_t look = pos;
+      u32 look = pos;
       while (std::isdigit(input[look])) look++;
 
       if (std::isalpha(input[look]) || input[look] == '_') {
@@ -199,7 +196,6 @@ std::vector<Token> Lexer::tokenize() {
   return tokens;
 }
 
-// Move symbols out of the lexer
 SymbolTable&& Lexer::move_symbols() {
   return std::move(symbols);
 }

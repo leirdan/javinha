@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "types.hpp"
 
 namespace jc {
     enum class TokenType {
@@ -28,7 +29,7 @@ namespace jc {
     struct Token {
         TokenType type;
         std::string value;
-        uint32_t line;
-        uint32_t column;
+        u32 line;
+        u32 column;
     };
 }

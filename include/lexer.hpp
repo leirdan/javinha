@@ -3,14 +3,15 @@
 #include <string>
 #include "token.hpp"
 #include "symbol_table.hpp"
+#include "types.hpp"
 
 namespace jc {
 class Lexer {
 private:
   std::string input;
-  uint32_t pos = 0;
-  uint32_t line = 1;
-  uint32_t col = 1;
+  u32 pos = 0;
+  u32 line = 1;
+  u32 col = 1;
 
   SymbolTable symbols;
 

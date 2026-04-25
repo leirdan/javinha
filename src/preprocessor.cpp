@@ -35,13 +35,11 @@ std::string jc::pre::minify(std::string&& buffer)
   for (u64 i = 0; i < buffer_size; i++) 
   {
     current_char = buffer[i];
-    // Testando preservar quebra de linha
     if (current_char == '\n') {
       result += current_char;
       continue;
     }
 
-    // caracteres normais
     if (!iscntrl(current_char) && !isspace(current_char)) 
     {
       result += current_char;
