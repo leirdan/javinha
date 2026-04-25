@@ -6,8 +6,9 @@ namespace jc {
 
 struct Symbol {
   std::string name;
-  std::string type;   
-  size_t line;        // onde foi declarado ?
+  std::string category; 
+  std::string type;    
+  uint32_t line;
 };
 
 class SymbolTable {
@@ -15,9 +16,12 @@ private:
   std::unordered_map<std::string, Symbol> table;
 
 public:
-  void insert(const std::string& id, size_t line = 0) {
+  void insert(const std::string& id,
+              const std::string& category,
+              uint32_t line = 0) 
+  {
     if (table.find(id) == table.end()) {
-      table[id] = Symbol{id, "", line};
+      table[id] = Symbol{id, category, "", line};
     }
   }
 
