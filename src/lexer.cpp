@@ -13,7 +13,6 @@ static std::unordered_map<std::string, TokenType> keywords = {
     {"static", TokenType::KEYWORD},
     {"void", TokenType::KEYWORD},
     {"int", TokenType::KEYWORD},
-    {"string", TokenType::KEYWORD},
     {"if", TokenType::KEYWORD},
     {"else", TokenType::KEYWORD},
     {"while", TokenType::KEYWORD},
@@ -21,6 +20,37 @@ static std::unordered_map<std::string, TokenType> keywords = {
     {"return", TokenType::KEYWORD},
     {"new", TokenType::KEYWORD},
     {"this", TokenType::KEYWORD}
+};
+
+static std::unordered_map<char, TokenType> single_tokens = {
+    {'+', TokenType::OPERATOR},
+    {'-', TokenType::OPERATOR},
+    {'*', TokenType::OPERATOR},
+    {'/', TokenType::OPERATOR},
+    {'=', TokenType::OPERATOR},
+    {'!', TokenType::OPERATOR},
+    {'<', TokenType::OPERATOR},
+    {'>', TokenType::OPERATOR},
+    {';', TokenType::DELIMITER},
+    {',', TokenType::DELIMITER},
+    {'.', TokenType::DELIMITER},
+    {'(', TokenType::DELIMITER},
+    {')', TokenType::DELIMITER},
+    {'{', TokenType::DELIMITER},
+    {'}', TokenType::DELIMITER},
+    {'[', TokenType::DELIMITER},
+    {']', TokenType::DELIMITER}
+};
+
+static std::unordered_map<std::string, TokenType> double_ops = {
+    {"==", TokenType::OPERATOR},
+    {"!=", TokenType::OPERATOR},
+    {"<=", TokenType::OPERATOR},
+    {">=", TokenType::OPERATOR},
+    {"++", TokenType::OPERATOR},
+    {"--", TokenType::OPERATOR},
+    {"+=", TokenType::OPERATOR},
+    {"-=", TokenType::OPERATOR}
 };
 
 Lexer::Lexer(std::string input) : input(std::move(input)) {}
@@ -87,11 +117,11 @@ Token Lexer::number() {
   u32 start = pos;
   u32 start_col = col;
 
-  while (std::isdigit(peek())) advance();
+  while (pos < input.size() && std::isdigit(peek())) advance();
 
   if (peek() == '.') {
     advance();
-    while (std::isdigit(peek())) advance();
+    while (pos < input.size() && std::isdigit(peek())) advance();
   }
 
   return {
@@ -105,7 +135,7 @@ Token Lexer::number() {
 // String: "([^"\\]|\\.)*"
 Token Lexer::string() {
   u32 start_col = col;
-  advance(); // consume "
+  advance();
 
   u32 start = pos;
 
@@ -116,7 +146,12 @@ Token Lexer::string() {
 
   std::string value = input.substr(start, pos - start);
 
-  if (peek() == '"') advance();
+  if (peek() == '"') {
+    advance();
+  } else {
+    std::cerr << "Erro lexico: string nao fechada na linha "
+              << line << "\n";
+  }
 
   return {TokenType::STRING, value, line, start_col};
 }
@@ -125,24 +160,19 @@ Token Lexer::string() {
 Token Lexer::op_or_delim() {
   u32 start_col = col;
   char c = advance();
+
   std::string lex(1, c);
 
-  if ((c == '=' && peek() == '=') ||
-      (c == '!' && peek() == '=') ||
-      (c == '<' && peek() == '=') ||
-      (c == '>' && peek() == '=') ||
-      (c == '+' && peek() == '+') ||
-      (c == '-' && peek() == '-') ||
-      (c == '+' && peek() == '=') ||
-      (c == '-' && peek() == '=')) {
-    lex += advance();
-    return {TokenType::OPERATOR, lex, line, start_col};
+  std::string two = lex + peek();
+  auto it2 = double_ops.find(two);
+  if (it2 != double_ops.end()) {
+    advance();
+    return {it2->second, two, line, start_col};
   }
 
-  // delimitadores
-  if (c == ';' || c == ',' || c == '(' || c == ')' ||
-      c == '{' || c == '}' || c == '[' || c == ']') {
-    return {TokenType::DELIMITER, lex, line, start_col};
+  auto it1 = single_tokens.find(c);
+  if (it1 != single_tokens.end()) {
+    return {it1->second, lex, line, start_col};
   }
 
   return {TokenType::OPERATOR, lex, line, start_col};
@@ -162,9 +192,10 @@ std::vector<Token> Lexer::tokenize() {
     }
     else if (std::isdigit(c)) {
       u32 look = pos;
-      while (std::isdigit(input[look])) look++;
+      while (look < input.size() && std::isdigit(input[look])) look++;
 
-      if (std::isalpha(input[look]) || input[look] == '_') {
+      if (look < input.size() &&
+          (std::isalpha(input[look]) || input[look] == '_')) {
         std::cerr << "Erro lexico: identificador invalido na linha "
                   << line << "\n";
       }
@@ -174,14 +205,7 @@ std::vector<Token> Lexer::tokenize() {
     else if (c == '"') {
       tokens.push_back(string());
     }
-    else if (
-        c == '+' || c == '-' || c == '*' || c == '/' ||
-        c == '=' || c == '!' || c == '<' || c == '>' ||
-        c == ';' || c == ',' ||
-        c == '(' || c == ')' ||
-        c == '{' || c == '}' ||
-        c == '[' || c == ']'
-    ) {
+    else if (single_tokens.find(c) != single_tokens.end()) {
       tokens.push_back(op_or_delim());
     }
     else {
