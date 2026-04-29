@@ -1,45 +1,69 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
 #include "types.hpp"
 #include "preprocessor.hpp"
+#include "lexer.hpp"
 
 using namespace jc;
 
 int main(int argc, char *argv[]) 
 {
-  std::string program_buff;
-
   if (argc != 3) 
   {
-    std::cerr << "please provide the correct arguments.\n";
+    std::cerr << "usage: ./compiler input.ling output.txt\n";
     return EXIT_FAILURE;
   }
+
   char* input_file = argv[1];
   char* output_file = argv[2];
 
-  std::fstream f_stream(input_file);
+  std::ifstream f_stream(input_file);
   if (!f_stream.is_open()) 
   { 
     std::cerr << "file not found\n";
     return EXIT_FAILURE;
   }
 
-  // TODO: improve the efficiency of this
   std::stringstream stream;
   stream << f_stream.rdbuf();
-  program_buff = stream.str();
+  std::string program_buff = stream.str();
   f_stream.close();
 
-  // TODO: add some logs
   std::string buffer1 = pre::remove_comments(std::move(program_buff));
-  std::string new_buffer = pre::minify(std::move(buffer1));
-  u64 size = new_buffer.length();
+  std::string clean_code = pre::minify(std::move(buffer1));
+
+  Lexer lexer(clean_code);
+
+  std::vector<Token> tokens = lexer.tokenize();
+  SymbolTable symbols = lexer.move_symbols();
+
   std::ofstream o_stream(output_file);
-  for (u64 i = 0; i < size; i++) 
-  {
-    o_stream << new_buffer[i];
+
+  if (!o_stream.is_open()) {
+    std::cerr << "error creating output file\n";
+    return EXIT_FAILURE;
   }
+
+  // imprimir tokens
+  o_stream << "TOKENS:\n";
+  for (const auto& t : tokens) {
+    o_stream << "(" << to_string(t.type) << ", " << t.value
+             << ") [linha " << t.line << "]\n";
+  }
+
+  o_stream << "\nSYMBOL TABLE:\n";
+  for (const auto& [k, v] : symbols.get_all()) {
+    o_stream << v.name
+            << " | categoria: " << v.category
+            << " | tipo: " << v.type
+            << " | linha: " << v.line << "\n";
+  }
+
+  o_stream.close();
+
+  std::cout << "Analise lexica concluida com sucesso.\n";
 
   return 0;
 }
