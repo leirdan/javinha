@@ -3,23 +3,14 @@
 #include <cctype>
 #include <unordered_map>
 #include <iostream>
+#include <array>
 
 namespace jc {
 
 // List of keywords (NOT DEFINITIVE)
-static std::unordered_map<std::string, TokenType> keywords = {
-    {"class", TokenType::KEYWORD},
-    {"public", TokenType::KEYWORD},
-    {"static", TokenType::KEYWORD},
-    {"void", TokenType::KEYWORD},
-    {"int", TokenType::KEYWORD},
-    {"if", TokenType::KEYWORD},
-    {"else", TokenType::KEYWORD},
-    {"while", TokenType::KEYWORD},
-    {"for", TokenType::KEYWORD},
-    {"return", TokenType::KEYWORD},
-    {"new", TokenType::KEYWORD},
-    {"this", TokenType::KEYWORD}
+static constexpr std::array<std::string_view, 12> keywords = {
+    "class", "public", "static", "void", "int",
+    "if", "else", "while", "for", "return", "new", "this"
 };
 
 static std::unordered_map<char, TokenType> single_tokens = {
@@ -42,186 +33,192 @@ static std::unordered_map<char, TokenType> single_tokens = {
     {']', TokenType::DELIMITER}
 };
 
-static std::unordered_map<std::string, TokenType> double_ops = {
-    {"==", TokenType::OPERATOR},
-    {"!=", TokenType::OPERATOR},
-    {"<=", TokenType::OPERATOR},
-    {">=", TokenType::OPERATOR},
-    {"++", TokenType::OPERATOR},
-    {"--", TokenType::OPERATOR},
-    {"+=", TokenType::OPERATOR},
-    {"-=", TokenType::OPERATOR}
+static constexpr std::array<std::string_view, 8> double_ops = {
+    "==", "!=", "<=", ">=", "++", "--", "+=", "-="
 };
 
 Lexer::Lexer(std::string input) : input(std::move(input)) {}
 
 char Lexer::peek() const {
-  if (pos >= input.size()) return '\0';
-  return input[pos];
+    if (pos >= input.size()) return '\0';
+    return input[pos];
 }
 
 char Lexer::advance() {
-  if (pos >= input.size()) return '\0';
+    if (pos >= input.size()) return '\0';
 
-  char c = input[pos++];
-  if (c == '\n') {
-    line++;
-    col = 1;
-  } else {
-    col++;
-  }
-  return c;
+    char c = input[pos++];
+    if (c == '\n') {
+        line++;
+        col = 1;
+    } else {
+        col++;
+    }
+
+    return c;
 }
 
 void Lexer::skip_whitespace() {
-  while (std::isspace(peek())) {
-    advance();
-  }
+    while (std::isspace(peek())) {
+        advance();
+    }
 }
 
 bool Lexer::is_keyword(const std::string& str) const {
-  return keywords.find(str) != keywords.end();
+    for (auto kw : keywords) {
+        if (kw == str) return true;
+    }
+    return false;
 }
 
 std::string suggest(const std::string& wrong,
                     const SymbolTable& symbols) {
-  for (const auto& [k, v] : symbols.get_all()) {
-    if (!k.empty() && !wrong.empty() && k[0] == wrong[0]) {
-      return k;
+    for (const auto& [k, v] : symbols.get_all()) {
+        if (!k.empty() && !wrong.empty() && k[0] == wrong[0]) {
+            return k;
+        }
     }
-  }
-  return "";
+    return "";
 }
 
 // Identifier: [a-zA-Z_][a-zA-Z0-9_]*
 Token Lexer::identifier() {
-  u32 start = pos;
-  u32 start_col = col;
+    u32 start = pos;
+    u32 start_col = col;
 
-  while (std::isalnum(peek()) || peek() == '_') {
-    advance();
-  }
+    while (std::isalnum(peek()) || peek() == '_') {
+        advance();
+    }
 
-  std::string text = input.substr(start, pos - start);
+    std::string text = input.substr(start, pos - start);
 
-  if (is_keyword(text)) {
-    return {TokenType::KEYWORD, text, line, start_col};
-  }
+    if (is_keyword(text)) {
+        return {TokenType::KEYWORD, text, line, start_col};
+    }
 
-  symbols.insert(text, "IDENTIFIER", line);
-  return {TokenType::IDENTIFIER, text, line, start_col};
+    symbols.insert(text, "IDENTIFIER", line);
+    return {TokenType::IDENTIFIER, text, line, start_col};
 }
 
 // Number: [0-9]+(\.[0-9]+)?
 Token Lexer::number() {
-  u32 start = pos;
-  u32 start_col = col;
+    u32 start = pos;
+    u32 start_col = col;
 
-  while (pos < input.size() && std::isdigit(peek())) advance();
+    while (pos < input.size() && std::isdigit(peek())) {
+        advance();
+    }
 
-  if (peek() == '.') {
-    advance();
-    while (pos < input.size() && std::isdigit(peek())) advance();
-  }
+    if (peek() == '.') {
+        advance();
+        while (pos < input.size() && std::isdigit(peek())) {
+            advance();
+        }
+    }
 
-  return {
-    TokenType::NUMBER,
-    input.substr(start, pos - start),
-    line,
-    start_col
-  };
+    return {
+        TokenType::NUMBER,
+        input.substr(start, pos - start),
+        line,
+        start_col
+    };
 }
 
 // String: "([^"\\]|\\.)*"
 Token Lexer::string() {
-  u32 start_col = col;
-  advance();
-
-  u32 start = pos;
-
-  while (peek() != '"' && peek() != '\0') {
-    if (peek() == '\\') advance();
+    u32 start_col = col;
     advance();
-  }
 
-  std::string value = input.substr(start, pos - start);
+    u32 start = pos;
 
-  if (peek() == '"') {
-    advance();
-  } else {
-    std::cerr << "Erro lexico: string nao fechada na linha "
-              << line << "\n";
-  }
+    while (peek() != '"' && peek() != '\0') {
+        if (peek() == '\\') {
+            advance();
+        }
+        advance();
+    }
 
-  return {TokenType::STRING, value, line, start_col};
+    std::string value = input.substr(start, pos - start);
+
+    if (peek() == '"') {
+        advance();
+    } else {
+        std::cerr << "Erro lexico: string nao fechada na linha "
+                  << line << "\n";
+    }
+
+    return {TokenType::STRING, value, line, start_col};
 }
 
 // Operator or Delimiter
 Token Lexer::op_or_delim() {
-  u32 start_col = col;
-  char c = advance();
+    u32 start_col = col;
+    char c = advance();
 
-  std::string lex(1, c);
+    std::string lex(1, c);
+    std::string two = lex + peek();
 
-  std::string two = lex + peek();
-  auto it2 = double_ops.find(two);
-  if (it2 != double_ops.end()) {
-    advance();
-    return {it2->second, two, line, start_col};
-  }
+    for (auto op : double_ops) {
+        if (op == two) {
+            advance();
+            return {TokenType::OPERATOR, two, line, start_col};
+        }
+    }
 
-  auto it1 = single_tokens.find(c);
-  if (it1 != single_tokens.end()) {
-    return {it1->second, lex, line, start_col};
-  }
+    auto it1 = single_tokens.find(c);
+    if (it1 != single_tokens.end()) {
+        return {it1->second, lex, line, start_col};
+    }
 
-  return {TokenType::OPERATOR, lex, line, start_col};
+    return {TokenType::OPERATOR, lex, line, start_col};
 }
 
 std::vector<Token> Lexer::tokenize() {
-  std::vector<Token> tokens;
+    std::vector<Token> tokens;
 
-  while (pos < input.size()) {
-    skip_whitespace();
+    while (pos < input.size()) {
+        skip_whitespace();
 
-    char c = peek();
-    if (c == '\0') break;
+        char c = peek();
+        if (c == '\0') break;
 
-    if (std::isalpha(c) || c == '_') {
-      tokens.push_back(identifier());
+        if (std::isalpha(c) || c == '_') {
+            tokens.push_back(identifier());
+        }
+        else if (std::isdigit(c)) {
+            u32 look = pos;
+            while (look < input.size() && std::isdigit(input[look])) {
+                look++;
+            }
+
+            if (look < input.size() &&
+                (std::isalpha(input[look]) || input[look] == '_')) {
+                std::cerr << "Erro lexico: identificador invalido na linha "
+                          << line << "\n";
+            }
+
+            tokens.push_back(number());
+        }
+        else if (c == '"') {
+            tokens.push_back(string());
+        }
+        else if (single_tokens.find(c) != single_tokens.end()) {
+            tokens.push_back(op_or_delim());
+        }
+        else {
+            std::cerr << "Erro lexico: caractere invalido '"
+                      << c << "' na linha " << line
+                      << ", coluna " << col << "\n";
+            advance();
+        }
     }
-    else if (std::isdigit(c)) {
-      u32 look = pos;
-      while (look < input.size() && std::isdigit(input[look])) look++;
 
-      if (look < input.size() &&
-          (std::isalpha(input[look]) || input[look] == '_')) {
-        std::cerr << "Erro lexico: identificador invalido na linha "
-                  << line << "\n";
-      }
-
-      tokens.push_back(number());
-    }
-    else if (c == '"') {
-      tokens.push_back(string());
-    }
-    else if (single_tokens.find(c) != single_tokens.end()) {
-      tokens.push_back(op_or_delim());
-    }
-    else {
-      std::cerr << "Erro lexico: caractere invalido '"
-                << c << "' na linha " << line
-                << ", coluna " << col << "\n";
-      advance();
-    }
-  }
-
-  tokens.push_back({TokenType::END_OF_FILE, "", line, col});
-  return tokens;
+    tokens.push_back({TokenType::END_OF_FILE, "", line, col});
+    return tokens;
 }
 
 SymbolTable&& Lexer::move_symbols() {
-  return std::move(symbols);
+    return std::move(symbols);
 }
 
 }

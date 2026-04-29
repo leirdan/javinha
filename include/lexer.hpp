@@ -6,6 +6,15 @@
 #include "types.hpp"
 
 namespace jc {
+
+/**
+ * \brief Lexical analyzer responsible for tokenizing the source code.
+ *
+ * The Lexer is responsible for scanning the input string and converting it
+ * into a sequence of tokens to be consumed by later compiler phases.
+ * It also maintains a symbol table for identifiers encountered during
+ * the tokenization process.
+ */
 class Lexer {
 private:
   std::string input;
@@ -15,22 +24,104 @@ private:
 
   SymbolTable symbols;
 
+  /**
+   * \brief Returns the current character without consuming it.
+   *
+   * @return Current character in the input stream.
+   */
   char peek() const;
+
+  /**
+   * \brief Consumes the current character and advances the position.
+   *
+   * Also updates line and column counters accordingly.
+   *
+   * @return The consumed character.
+   */
   char advance();
+
+  /**
+   * \brief Skips whitespace characters in the input.
+   *
+   * This includes spaces, tabs, and newline characters,
+   * updating position and line/column tracking.
+   */
   void skip_whitespace();
 
+  /**
+   * \brief Parses an identifier or keyword token.
+   *
+   * Reads alphanumeric sequences and determines whether
+   * the resulting lexeme is a keyword or a user-defined identifier.
+   *
+   * @return Token representing an identifier or keyword.
+   */
   Token identifier();
-  Token number();
-  Token string();
-  Token op_or_delim(); // operator or delimiter (didn't know how to name it)
 
+  /**
+   * \brief Parses a numeric literal token.
+   *
+   * Reads a sequence of digits and constructs a numeric token.
+   *
+   * @return Token representing a numeric literal.
+   */
+  Token number();
+
+  /**
+   * \brief Parses a string literal token.
+   *
+   * Reads characters enclosed in quotes and constructs
+   * a string token.
+   *
+   * @return Token representing a string literal.
+   */
+  Token string();
+
+  /**
+   * \brief Parses operators and delimiters.
+   *
+   * Handles single and multi-character operators as well as
+   * language delimiters such as braces, parentheses, etc.
+   *
+   * @return Token representing an operator or delimiter.
+   */
+  Token op_or_delim();
+
+  /**
+   * \brief Checks whether a given lexeme is a keyword.
+   *
+   * @param lexeme String to be checked.
+   * @return True if the lexeme is a reserved keyword, false otherwise.
+   */
   bool is_keyword(const std::string&) const;
 
 public:
+  /**
+   * \brief Constructs a Lexer instance.
+   *
+   * @param input Source code string to be tokenized.
+   */
   Lexer(std::string input);
 
+  /**
+   * \brief Tokenizes the entire input source code.
+   *
+   * Iterates through the input and generates a sequence
+   * of tokens representing the program.
+   *
+   * @return Vector containing all tokens extracted from the input.
+   */
   std::vector<Token> tokenize();
-  SymbolTable&& move_symbols();
+
+  /**
+   * \brief Transfers ownership of the symbol table.
+   *
+   * This method allows moving the internally built symbol table
+   * to another component without copying.
+   *
+   * @return Rvalue reference to the symbol table.
+   */
+  [[nodiscard]] SymbolTable&& move_symbols();
 };
 
-}
+} // namespace jc
