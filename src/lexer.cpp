@@ -9,7 +9,7 @@ namespace jc
 {
 
     // List of keywords (NOT DEFINITIVE)
-    static constexpr std::array<std::string_view, 14> keywords = {
+    static constexpr std::array<std::string_view, 15> keywords = {
         "class",
         "public",
         "static",

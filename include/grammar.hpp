@@ -89,11 +89,12 @@ namespace jc
       DOT,
       COMMA,
       SEMICOLON,
-      ID,
+      LENGTH,
       NUMBER,
-      LENGTH
+      ID,
     };
 
+    const static std::string type_to_string(SymbolType t);
     const static std::string symbol_to_string(NT nt);
     const static std::string symbol_to_string(T t);
 
@@ -211,8 +212,9 @@ namespace jc
     };
 
     const static NT start_symbol = NT::PROG;
+    const u8 rules = 32;
 
-    static std::array<GRule, 26> grammar = {
+    static std::array<GRule, rules> grammar = {
         // PROG
         GRule{.rhs = {{GSymbol::N(NT::MAINC), GSymbol::N(NT::DEFCL)}}, .lhs = NT::PROG},
         // MAINC
@@ -257,20 +259,32 @@ namespace jc
         // CMD2
         {.rhs = {{GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}, {GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}}, .lhs = NT::CMD2},
         // EXP
-        {.rhs = {{GSymbol::T(T::NEW), GSymbol::N(NT::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::NOT), GSymbol::N(NT::EXP), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::TRUE), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::FALSE), GSymbol::N(NT::EXP2)}, {GSymbol::N(NT::ID), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::NUMBER), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::THIS), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::NEW), GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::N(NT::EXP2)}}, .lhs = NT::EXP},
+        {.rhs = {{GSymbol::T(T::NEW), GSymbol::N(NT::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::NOT), GSymbol::N(NT::EXP), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::TRUE), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::FALSE), GSymbol::N(NT::EXP2)}, {GSymbol::N(NT::ID), GSymbol::N(NT::EXP2)}, {GSymbol::N(NT::NUMBER), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::THIS), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::NEW), GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::N(NT::EXP2)}}, .lhs = NT::EXP},
         // EXP2
         {
-            .rhs = {{GSymbol::T(T::AND), GSymbol::N(NT::EXP)}, {GSymbol::T(T::GT), GSymbol::N(NT::EXP)}, {GSymbol::T(T::PLUS), GSymbol::N(NT::EXP)}, {GSymbol::T(T::MINUS), GSymbol::N(NT::EXP)}, {GSymbol::T(T::MULT), GSymbol::N(NT::EXP)}, {GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}, {GSymbol::N(NT::EXP), GSymbol::T(T::DOT), GSymbol::N(NT::EXP3)}, {GSymbol::L()}},
+            .rhs = {{GSymbol::T(T::AND), GSymbol::N(NT::EXP)}, {GSymbol::T(T::GT), GSymbol::N(NT::EXP)}, {GSymbol::T(T::PLUS), GSymbol::N(NT::EXP)}, {GSymbol::T(T::MINUS), GSymbol::N(NT::EXP)}, {GSymbol::T(T::MULT), GSymbol::N(NT::EXP)}, {GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}, {GSymbol::T(T::DOT), GSymbol::N(NT::EXP3)}, {GSymbol::L()}},
             .lhs = NT::EXP2,
         },
         // EXP3
-        {.rhs = {{GSymbol::T(T::LENGTH)}, {GSymbol::N(NT::EXP), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR)}}, .lhs = NT::EXP3},
+        {.rhs = {{GSymbol::T(T::LENGTH)}, {GSymbol::N(NT::EXP), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR)}, {GSymbol::N(NT::ID), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR)}}, .lhs = NT::EXP3},
         // LISTEXP
         {.rhs = {{GSymbol::N(NT::EXP), GSymbol::N(NT::LISTEXP2)}}, .lhs = NT::LISTEXP},
         // LISTEXP2
         {.rhs = {{GSymbol::T(T::DOT), GSymbol::N(NT::LISTEXP3)}, {GSymbol::L()}}, .lhs = NT::LISTEXP2},
         // LISTEXP3
-        {.rhs = {{GSymbol::N(NT::LISTEXP)}, {GSymbol::L()}}, .lhs = NT::LISTEXP3}};
+        {.rhs = {{GSymbol::N(NT::LISTEXP)}, {GSymbol::L()}}, .lhs = NT::LISTEXP3},
+        // ID
+        {.rhs = {{GSymbol::T(T::ID)}}, .lhs = NT::ID},
+        // NUMBER
+        {.rhs = {{GSymbol::T(T::NUMBER)}}, .lhs = NT::NUMBER},
+        // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID},
+        // {.rhs = {{GSymbol::N(NT::WORD)}, {GSymbol::L()}}, .lhs = NT::ID2},
+        // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID},
+        // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID},
+        // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID},
+        // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID}};
+
+    };
 
     // retorna o índice
     static i8 contains_key(const GSymbol &sym)
@@ -278,7 +292,7 @@ namespace jc
       if (sym.type != SymbolType::NON_TERMINAL)
         return -1;
 
-      for (u8 i = 0; i < 26; i++)
+      for (u8 i = 0; i < rules; i++)
       {
         if ((u8)grammar::grammar.at(i).lhs == sym.value)
         {
@@ -286,6 +300,19 @@ namespace jc
         }
       }
       return -1;
+    }
+
+    const static std::string type_to_string(SymbolType t)
+    {
+      switch (t)
+      {
+      case SymbolType::LAMBDA:
+        return "LAMBDA";
+      case SymbolType::NON_TERMINAL:
+        return "NON TERMINAL";
+      case SymbolType::TERMINAL:
+        return "TERMINAL";
+      }
     }
 
     const static std::string symbol_to_string(NT nt)

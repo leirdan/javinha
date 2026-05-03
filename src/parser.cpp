@@ -32,7 +32,7 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
 
   for (u64 i = 0; i < n; i++)
   {
-    log::debug("Iteração " + std::to_string(i) + " do loop externo.");
+    log::debug("=== Coluna " + std::to_string(i) + " do chart ===");
     bool added = true;
     do
     {
@@ -41,10 +41,10 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
       StateSet current_set = chart.at(i);
       for (const State &state : current_set)
       {
-        log::debug("- State atual: " + state.to_string());
+        log::debug("  - State atual: " + state.to_string());
         if (!state.is_complete())
         {
-          log::debug("  - State não completo. ");
+          log::debug("    - State não completo. ");
           std::optional<GSymbol> sym = state.next_symbol(); // TODO: adaptar para uma verificação pelo type de sym?
           if (sym.has_value())
           {
@@ -57,20 +57,22 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
                 State newState(nt, &sym_prods, (u8)0, i);
                 if (chart.at(i).insert(newState).second)
                 {
-                  log::debug("  - Adicionado " + sym->to_string() + " no chart " + std::to_string(i) + " com a produção " + sym_prods.to_string());
+                  log::debug("    - Adicionado " + sym->to_string() + " no chart " + std::to_string(i) + " com a produção " + sym_prods.to_string());
                   added = true;
                 }
               }
             }
             else
             { // terminal
-              log::debug("  - Próximo símbolo: " + sym->to_string() + ", terminal");
+              log::debug("    - Próximo símbolo: " + sym->to_string() + ", terminal");
+              // log::debug("  - Tipo: " + type_to_string(sym->type));
+              log::debug("    - Próximo token: " + tokens.at(i).to_string());
               if (i < n && sym->type == SymbolType::TERMINAL && sym->value == (u8)map_token(tokens.at(i)))
               {
-                State new_state = State(state.lhs, state.rhs, state.dot + 1, state.start + 1);
+                State new_state = State(state.lhs, state.rhs, state.dot + 1, state.start);
                 if (chart.at(i + 1).insert(new_state).second)
                 {
-                  log::debug("  - Ponto avançou para '" + sym->to_string() + "' e foi adicionado no próximo chart ");
+                  log::debug("    - Ponto avançou para '" + sym->to_string() + "' e foi adicionado no próximo chart ");
                   added = true;
                 }
               }
@@ -79,18 +81,23 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
         }
         else
         { // complete
-          log::debug("  - State completo. ");
+          log::debug("    - State completo, retornado aos states da iteração " + std::to_string(state.start));
           StateSet start_chart = chart.at(state.start);
           for (const auto &s : start_chart)
           {
+            log::debug("    - State capturado: " + s.to_string());
             if (!s.is_complete())
             {
-              const auto sym = s.next_symbol();
-              if (sym.has_value() && sym->value == (u8)s.lhs)
+              const std::optional<GSymbol> sym = s.next_symbol();
+              // log::debug("    - Comparação: " + sym->to_string() + " e " + symbol_to_string(state.lhs));
+              if (sym.has_value() && sym->value == (u8)state.lhs) // state avança se o próximo símbolo for o mesmo que completou por último em outro chart
               {
-                State new_state = State(state.lhs, state.rhs, state.dot + 1, state.start);
+                State new_state = State(s.lhs, s.rhs, s.dot + 1, s.start);
                 if (chart.at(i).insert(new_state).second)
+                {
+                  log::debug("      - State avança: " + new_state.to_string());
                   added = true;
+                }
               }
             }
           }
@@ -116,6 +123,15 @@ static T map_token(const Token &t)
   case TokenType::NUMBER:
     return T::NUMBER;
   case TokenType::IDENTIFIER:
+    if (t.value == "main")
+      return T::MAIN;
+    if (t.value == "System")
+      return T::SYSTEM;
+    if (t.value == "out")
+      return T::OUT;
+    if (t.value == "println")
+      return T::PRINTLN;
+    return T::ID;
   case TokenType::STRING:
     return T::ID;
   case TokenType::DELIMITER:
