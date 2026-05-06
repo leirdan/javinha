@@ -48,34 +48,54 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
           std::optional<GSymbol> sym = state.next_symbol(); // TODO: adaptar para uma verificação pelo type de sym?
           if (sym.has_value())
           {
-            i8 idx = grammar::contains_key(*sym);
-            if (idx != -1) // non-terminal
+            if (sym->type == SymbolType::LAMBDA)
             {
-              for (const auto &sym_prods : g->at(idx).rhs)
+              log::debug("    - Lambda");
+              State new_state = State(state.lhs, state.rhs, state.dot + 1, state.start);
+
+              if (chart.at(i).insert(new_state).second)
               {
-                auto nt = static_cast<NT>(sym->value);
-                State newState(nt, &sym_prods, (u8)0, i);
-                if (chart.at(i).insert(newState).second)
-                {
-                  log::debug("    - Adicionado " + sym->to_string() + " no chart " + std::to_string(i) + " com a produção " + sym_prods.to_string());
-                  added = true;
-                }
+                added = true;
               }
             }
             else
-            { // terminal
-              log::debug("    - Próximo símbolo: " + sym->to_string() + ", terminal");
-              // log::debug("  - Tipo: " + type_to_string(sym->type));
-              log::debug("    - Próximo token: " + tokens.at(i).to_string());
-              if (i < n && sym->type == SymbolType::TERMINAL && sym->value == (u8)map_token(tokens.at(i)))
+            {
+              i8 idx = grammar::contains_key(*sym);
+              if (idx != -1) // non-terminal
               {
-                State new_state = State(state.lhs, state.rhs, state.dot + 1, state.start);
-                if (chart.at(i + 1).insert(new_state).second)
+                for (const auto &sym_prods : g->at(idx).rhs)
                 {
-                  log::debug("    - Ponto avançou para '" + sym->to_string() + "' e foi adicionado no próximo chart ");
-                  added = true;
+                  auto nt = static_cast<NT>(sym->value);
+                  State newState(nt, &sym_prods, (u8)0, i);
+                  if (chart.at(i).insert(newState).second)
+                  {
+                    log::debug("    - Adicionado " + sym->to_string() + " no chart " + std::to_string(i) + " com a produção " + sym_prods.to_string());
+                    added = true;
+                  }
                 }
               }
+              else
+              { // terminal
+                log::debug("    - Próximo símbolo: " + sym->to_string() + ", terminal");
+                // log::debug("  - Tipo: " + type_to_string(sym->type));
+                // t_idx++;
+                log::debug("    - Próximo token: " + tokens.at(i).to_string());
+                if (i < n && sym->type == SymbolType::TERMINAL && sym->value == (u8)map_token(tokens.at(i)))
+                {
+                  State new_state = State(state.lhs, state.rhs, state.dot + 1, state.start);
+                  if (chart.at(i + 1).insert(new_state).second)
+                  {
+                    log::debug("    - Ponto avançou para '" + sym->to_string() + "' e foi adicionado no próximo chart ");
+                    added = true;
+                  }
+                }
+              }
+              // else if (i < n && sym->type == SymbolType::LAMBDA)
+              // {
+              // }
+              // else if (i < n && sym->type == SymbolType::LAMBDA)
+              // {
+              // }
             }
           }
         }
