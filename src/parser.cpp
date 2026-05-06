@@ -105,6 +105,65 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
       }
 
     } while (added);
+
+    if (i < n && chart.at(i + 1).empty())
+    {
+      log::debug("ERRO SINTÁTICO: Falha ao processar o token '" + tokens.at(i).to_string() + "'");
+
+      std::string expected_msg = "Esperava-se os terminais (IDs): ";
+      for (const auto &s : chart.at(i))
+      {
+        auto sym = s.next_symbol();
+        if (sym.has_value() && sym->type == SymbolType::TERMINAL)
+        {
+           expected_msg += std::to_string(sym->value) + " ";
+        }
+      }
+      log::debug(std::move(expected_msg));
+
+      bool recovered = false;
+
+      for (u64 k = i; k < n && !recovered; k++)
+      {
+        T mapped_t = map_token(tokens.at(k));
+
+        if (mapped_t == T::SEMICOLON || mapped_t == T::RBRACE || mapped_t == T::RBRACKET)
+        {
+          log::debug("Encontrado possível ponto de sincronização na posição " + std::to_string(k));
+
+          for (i64 c = i; c >= 0; c--)
+          {
+            bool chart_expects_sync = false;
+            for (const auto &s : chart.at(c))
+            {
+              auto sym = s.next_symbol();
+              if (sym.has_value() && sym->type == SymbolType::TERMINAL && sym->value == (u8)mapped_t)
+              {
+                chart_expects_sync = true;
+                break;
+              }
+            }
+
+            if (chart_expects_sync)
+            {
+              chart.at(k) = chart.at(c);
+              
+              i = k - 1; 
+              recovered = true;
+              
+              log::debug("Recuperado com sucesso! Revertido ao chart " + std::to_string(c) + " e saltando entrada para token " + std::to_string(k));
+              break;
+            }
+          }
+        }
+      }
+
+      if (!recovered)
+      {
+        log::debug("Falha crítica na recuperação. Abortando análise.");
+        return false;
+      }
+    }
   }
 
   for (const auto &s : chart.at(n))
