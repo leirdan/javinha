@@ -77,6 +77,7 @@ namespace jc
       MINUS,
       MULT,
       GT,
+      LT,
       AND,
       NOT,
       ASSIGN,
@@ -92,6 +93,7 @@ namespace jc
       LENGTH,
       NUMBER,
       ID,
+      END
     };
 
     const static std::string type_to_string(SymbolType t);
@@ -235,7 +237,7 @@ namespace jc
         // CMD
         GRule{.rhs = {GProduction{GSymbol::T(T::LBRACE), GSymbol::N(NT::CMD), GSymbol::T(T::RBRACE)}, GProduction{GSymbol::T(T::IF), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD), GSymbol::T(T::ELSE), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::WHILE), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::SYSTEM), GSymbol::T(T::DOT), GSymbol::T(T::OUT), GSymbol::T(T::DOT), GSymbol::T(T::PRINTLN), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}}, .lhs = NT::CMD},
         // EXP
-        GRule{.rhs = {GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::AND), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::GT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::PLUS), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::MINUS), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::MULT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::DOT), GSymbol::T(T::LENGTH)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::DOT), GSymbol::N(NT::EXP), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::NEW), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::NOT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::TRUE)}, GProduction{GSymbol::T(T::FALSE)}, GProduction{GSymbol::T(T::ID)}, GProduction{GSymbol::T(T::NUMBER)}, GProduction{GSymbol::T(T::THIS)}, GProduction{GSymbol::T(T::NEW), GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}}, .lhs = NT::EXP},
+        GRule{.rhs = {GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::AND), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::LT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::GT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::PLUS), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::MINUS), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::MULT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::DOT), GSymbol::T(T::LENGTH)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::DOT), GSymbol::N(NT::EXP), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::NEW), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::NOT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::TRUE)}, GProduction{GSymbol::T(T::FALSE)}, GProduction{GSymbol::T(T::ID)}, GProduction{GSymbol::T(T::NUMBER)}, GProduction{GSymbol::T(T::THIS)}, GProduction{GSymbol::T(T::NEW), GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}}, .lhs = NT::EXP},
         // LISTEXP
         GRule{.rhs = {GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::COMMA), GSymbol::N(NT::LISTEXP)}, GProduction{GSymbol::N(NT::EXP)}, GProduction{GSymbol::L()}}, .lhs = NT::LISTEXP}};
 

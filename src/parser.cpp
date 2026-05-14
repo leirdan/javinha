@@ -1,5 +1,8 @@
 #include <utility>
 #include <unordered_set>
+#include <exception>
+#include <iostream>
+#include <stdexcept>
 #include "parser.hpp"
 #include "utils.hpp"
 
@@ -22,7 +25,8 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
   const auto *g = &grammar::grammar; // evitar ficar usando grammar::grammar;
 
   u64 n = tokens.size();
-  std::vector<StateSet> chart(n + 1);
+  std::cout << "tokens: " << n;
+  std::vector<StateSet> chart(n + 1); // Se tem 79 pq 80 iterações
   GProduction def = grammar::grammar.at(0).rhs.at(0);
   // initial state
   chart.at(0).insert(State(grammar::start_symbol,
@@ -30,7 +34,7 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
 
   log::debug("Preparado estado inicial para Earley Parser.");
 
-  for (u64 i = 0; i < n; i++)
+  for (u64 i = 0; i <= n; i++)
   {
     log::debug("=== Coluna " + std::to_string(i) + " do chart ===");
     bool added = true;
@@ -90,12 +94,6 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
                   }
                 }
               }
-              // else if (i < n && sym->type == SymbolType::LAMBDA)
-              // {
-              // }
-              // else if (i < n && sym->type == SymbolType::LAMBDA)
-              // {
-              // }
             }
           }
         }
@@ -110,7 +108,7 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
             {
               const std::optional<GSymbol> sym = s.next_symbol();
               // log::debug("    - Comparação: " + sym->to_string() + " e " + symbol_to_string(state.lhs));
-              if (sym.has_value() && sym->value == (u8)state.lhs) // state avança se o próximo símbolo for o mesmo que completou por último em outro chart
+              if (sym.has_value() && sym->type == SymbolType::NON_TERMINAL && sym->value == (u8)state.lhs) // state avança se o próximo símbolo for o mesmo que completou por último em outro chart
               {
                 State new_state = State(s.lhs, s.rhs, s.dot + 1, s.start);
                 if (chart.at(i).insert(new_state).second)
@@ -136,7 +134,7 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
         auto sym = s.next_symbol();
         if (sym.has_value() && sym->type == SymbolType::TERMINAL)
         {
-           expected_msg += std::to_string(sym->value) + " ";
+          expected_msg += sym->to_string() + " "; //  std::to_string(sym->value) + " ";
         }
       }
       log::debug(std::move(expected_msg));
@@ -167,10 +165,10 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
             if (chart_expects_sync)
             {
               chart.at(k) = chart.at(c);
-              
-              i = k - 1; 
+
+              i = k - 1;
               recovered = true;
-              
+
               log::debug("Recuperado com sucesso! Revertido ao chart " + std::to_string(c) + " e saltando entrada para token " + std::to_string(k));
               break;
             }
@@ -186,13 +184,15 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
     }
   }
 
+  log::debug("States no chart " + std::to_string(n) + ": ");
   for (const auto &s : chart.at(n))
   {
+    log::debug(s.to_string() + "\n");
     if (s.lhs == start_symbol && s.is_complete() && s.start == 0)
-      return true;
+      return 1;
   }
 
-  return false;
+  return 0;
 }
 
 static T map_token(const Token &t)
@@ -245,6 +245,10 @@ static T map_token(const Token &t)
       return T::AND;
     else if (t.value == "!")
       return T::NOT;
+    else if (t.value == ">")
+      return T::GT;
+    else if (t.value == "<")
+      return T::LT;
   case TokenType::KEYWORD:
     if (t.value == "class")
       return T::CLASS;
@@ -279,6 +283,9 @@ static T map_token(const Token &t)
     else if (t.value == "false")
       return T::FALSE;
   default:
-    break;
+    return T::END;
   }
+
+  log::debug("token: " + t.to_string());
+  throw std::runtime_error("erro aqui nesse carai");
 }
