@@ -22,11 +22,11 @@ const std::optional<grammar::GSymbol> parser::State::next_symbol() const
 
 bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
 {
-  const auto *g = &grammar::grammar; // evitar ficar usando grammar::grammar;
+
+  const auto *g = &grammar::grammar;
 
   u64 n = tokens.size();
-  std::cout << "tokens: " << n;
-  std::vector<StateSet> chart(n + 1); // Se tem 79 pq 80 iterações
+  std::vector<StateSet> chart(n + 1);
   GProduction def = grammar::grammar.at(0).rhs.at(0);
   // initial state
   chart.at(0).insert(State(grammar::start_symbol,
@@ -81,8 +81,6 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
               else
               { // terminal
                 log::debug("    - Próximo símbolo: " + sym->to_string() + ", terminal");
-                // log::debug("  - Tipo: " + type_to_string(sym->type));
-                // t_idx++;
                 log::debug("    - Próximo token: " + tokens.at(i).to_string());
                 if (i < n && sym->type == SymbolType::TERMINAL && sym->value == (u8)map_token(tokens.at(i)))
                 {
@@ -107,7 +105,6 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
             if (!s.is_complete())
             {
               const std::optional<GSymbol> sym = s.next_symbol();
-              // log::debug("    - Comparação: " + sym->to_string() + " e " + symbol_to_string(state.lhs));
               if (sym.has_value() && sym->type == SymbolType::NON_TERMINAL && sym->value == (u8)state.lhs) // state avança se o próximo símbolo for o mesmo que completou por último em outro chart
               {
                 State new_state = State(s.lhs, s.rhs, s.dot + 1, s.start);
@@ -121,10 +118,9 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
           }
         }
       }
-
     } while (added);
 
-    if (i < n && chart.at(i + 1).empty())
+    if ((i < n && chart.at(i + 1).empty()))
     {
       log::debug("ERRO SINTÁTICO: Falha ao processar o token '" + tokens.at(i).to_string() + "'");
 
@@ -191,7 +187,6 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
     if (s.lhs == start_symbol && s.is_complete() && s.start == 0)
       return 1;
   }
-
   return 0;
 }
 

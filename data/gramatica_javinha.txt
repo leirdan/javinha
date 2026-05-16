@@ -1,51 +1,51 @@
 [GLC - Javinha]
 
-Prog -> MainC DefCl
-MainC -> 'class' Id '{' 'public' 'static' 'void' 'main' '(' 'String' '[' ']' Id ')' '{' Cmd '} '}'
-DefCl -> 'class' Id DefCl2
-DefCl2 -> DefCl3 | 'extends' Id DefCl3
-DefCl3 -> '{' DefCl4 '}' DefCl6
-DefCl4 -> DefVar DefCl5 | DefCl5
-DefCl5 -> DefMet | λ
-DefCl6 -> DefCl | λ
-DefVar -> Type Id ';' DefVar2
-DefVar2 -> DefVar | λ
-DefMet -> 'public' Type Id '(' DefMet2
-DefMet2 -> Args ')' '{' DefMet3 | ')' '{' DefMet3
-DefMet3 -> DefVar Cmd 'return' Exp ';' '}' DefMet4 | Cmd 'return' Exp ';' '}' DefMet4
-DefMet4 -> DefMet | λ
-Type -> 'int' Type2 | 'boolean'
-Type2 -> '[' ']' | λ
-Args -> Type Id Args2
-Args2 -> '.' Args | λ
-Cmd -> '{' Cmd '}' | 'if' '(' Exp ')' Cmd 'else' Cmd | 'while' '(' Exp ')' Cmd | 'System' '.' 'out' '.' 'println' '(' Exp ')' ';' | Id Cmd2
-Cmd2 -> '=' Exp ';' | '[' Exp ']' '=' Exp ';'
-Exp -> 'new' Id '(' ')' Exp2 
-| '!' Exp Exp2
-| '(' Exp ')' Exp2
-| 'true' Exp2
-| 'false' Exp2
-| Id Exp2
-| Number Exp2
-| 'this' Exp2
-| 'new' 'int' '[' Exp ']' Exp2
-Exp2 -> '&&' Exp
-| '>' Exp
-| '+' Exp
-| '-' Exp
-| '*' Exp
-| '[' Exp ']'
---- | Exp '.' Exp3 -> está errado!
-| '.' Exp3
+Start → Prog 'EOF'
+Prog → MainC DefCl
+MainC → ‘ class ’ Id ‘{ ’ ‘ public ’ ‘ static ’ ‘ void ’ ‘ main ’ ‘( ’ ‘ String ’ ‘[ ’ ‘] ’ Id ‘) ’ ‘{ ’ Cmd ‘} ’ ‘} ’
+DefCl → ‘ class ’ Id ‘{ ’ DefVar DefMet ‘} ’ DefCl
+| ‘ class ’ Id ‘ extends ’ Id ‘{ ’ DefVar DefMet ‘} ’ DefCl
 | λ
---- Exp3 -> 'length' | Exp '(' ListExp ')'
-Exp3 -> 'length' | Exp '(' ListExp ')' | Id '(' ListExp ')'
-ListExp -> Exp ListExp2
-ListExp2 -> '.' ListExp3 | λ
-ListExp3 -> ListExp | λ
-Id -> Char Id2
-Id2 -> Word | λ
-Char -> 'a' | ... | 'z' | 'A' | ... | 'Z'
-Word -> '_' | Char Word2 | Number Word2
-Word2 -> Word | λ
-Number -> '0' | ... | '9'
+DefVar → Type Id ‘; ’ DefVar
+| λ
+DefMet → ‘ public ’ Type Id ‘( ’ Args ‘) ’ ‘{ ’ DefVar Cmd ‘ return ’ Exp ‘; ’ ‘} ’ DefMet
+| ‘ public ’ Type Id ‘( ’ ‘) ’ ‘{ ’ DefVar Cmd ‘ return ’ Exp ‘; ’ ‘} ’ DefMet
+| λ
+Type → ‘int ’ ‘[ ’ ‘] ’
+| ‘ boolean ’
+| ‘int ’
+| Id
+Args → Type Id
+| Type Id ‘,’ Args
+Cmd → ‘{ ’ Cmd ‘} ’
+| ‘if ’ ‘( ’ Exp ‘) ’ Cmd else Cmd
+| ‘ while ’ ‘( ’ Exp ‘) ’ Cmd
+| ‘ System ’ ‘. ’ ‘out ’ ‘. ’ ‘ println ’ ‘( ’ Exp ‘) ’ ‘; ’
+| Id ‘= ’ Exp ‘; ’
+| Id ‘[ ’ Exp ‘] ’ ‘= ’ Exp ‘; ’
+Exp → Exp ‘&& ’ Exp
+| Exp '<' Exp
+| Exp ‘>’ Exp
+| Exp ‘+ ’ Exp
+| Exp ‘-’ Exp
+| Exp ‘* ’ Exp
+| Exp ‘[ ’ Exp ‘] ’
+| Exp ‘. ’ ‘ length ’
+| Exp ‘. ’ Exp ‘( ’ ListExp ‘) ’
+| ‘new ’ Id ‘( ’ ‘) ’
+| ‘! ’ Exp
+| ‘( ’ Exp ‘) ’
+| ‘ true ’
+| ‘ false ’
+| Id
+| Number
+| ‘ this ’
+| ‘new ’ ‘int ’ ‘[ ’ Exp ‘] ’
+ListExp → Exp ‘,’ ListExp
+| Exp
+| λ
+Id → Char Word
+| Char
+Char → ‘a ’ | · · · | ‘z ’ | ‘A ’ | · · · | ‘Z ’
+Word → ‘_ ’ | Char Word | Number Word | Char | Number
+Number → ‘0 ’ | ‘1 ’ | · · · | ‘9 ’

@@ -17,7 +17,8 @@ namespace jc
 
     enum class NT : u8
     {
-      PROG = 1,
+      START = 1,
+      PROG,
       MAINC,
       DEFCL,
       DEFCL2,
@@ -213,10 +214,12 @@ namespace jc
       }
     };
 
-    const static NT start_symbol = NT::PROG;
-    const u8 rules = 10;
+    const static NT start_symbol = NT::START;
+    const u8 rules = 11;
 
     static std::array<GRule, rules> grammar = {
+        // START
+        GRule{.rhs = {GProduction{GSymbol::N(NT::PROG), GSymbol::T(T::END)}}, .lhs = NT::START},
         // PROG
         GRule{
             .rhs = {
@@ -346,6 +349,8 @@ namespace jc
     {
       switch (nt)
       {
+      case NT::START:
+        return "START";
       case NT::PROG:
         return "PROG";
       case NT::MAINC:
@@ -467,6 +472,8 @@ namespace jc
         return "*";
       case T::GT:
         return ">";
+      case T::LT:
+        return "<";
       case T::AND:
         return "&&";
       case T::NOT:
@@ -497,6 +504,8 @@ namespace jc
         return "number";
       case T::LENGTH:
         return "length";
+      case T::END:
+        return "EOF";
       default:
         return "UNKNOWN_T";
       }
