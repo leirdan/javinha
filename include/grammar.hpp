@@ -217,7 +217,8 @@ namespace jc
     const static NT start_symbol = NT::START;
     const u8 rules = 11;
 
-    static std::array<GRule, rules> grammar = {
+    using Grammar = std::array<GRule, rules>;
+    static Grammar grammar = {
         // START
         GRule{.rhs = {GProduction{GSymbol::N(NT::PROG), GSymbol::T(T::END)}}, .lhs = NT::START},
         // PROG

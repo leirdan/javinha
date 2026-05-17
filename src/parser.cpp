@@ -22,9 +22,6 @@ const std::optional<grammar::GSymbol> parser::State::next_symbol() const
 
 bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
 {
-
-  const auto *g = &grammar::grammar;
-
   u64 n = tokens.size();
   std::vector<StateSet> chart(n + 1);
   GProduction def = grammar::grammar.at(0).rhs.at(0);
@@ -46,75 +43,26 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
       for (const State &state : current_set)
       {
         log::debug("  - State atual: " + state.to_string());
-        if (!state.is_complete())
+        if (state.is_complete())
         {
-          log::debug("    - State não completo. ");
-          std::optional<GSymbol> sym = state.next_symbol(); // TODO: adaptar para uma verificação pelo type de sym?
-          if (sym.has_value())
-          {
-            if (sym->type == SymbolType::LAMBDA)
-            {
-              log::debug("    - Lambda");
-              State new_state = State(state.lhs, state.rhs, state.dot + 1, state.start);
-
-              if (chart.at(i).insert(new_state).second)
-              {
-                added = true;
-              }
-            }
-            else
-            {
-              i8 idx = grammar::contains_key(*sym);
-              if (idx != -1) // non-terminal
-              {
-                for (const auto &sym_prods : g->at(idx).rhs)
-                {
-                  auto nt = static_cast<NT>(sym->value);
-                  State newState(nt, &sym_prods, (u8)0, i);
-                  if (chart.at(i).insert(newState).second)
-                  {
-                    log::debug("    - Adicionado " + sym->to_string() + " no chart " + std::to_string(i) + " com a produção " + sym_prods.to_string());
-                    added = true;
-                  }
-                }
-              }
-              else
-              { // terminal
-                log::debug("    - Próximo símbolo: " + sym->to_string() + ", terminal");
-                log::debug("    - Próximo token: " + tokens.at(i).to_string());
-                if (i < n && sym->type == SymbolType::TERMINAL && sym->value == (u8)map_token(tokens.at(i)))
-                {
-                  State new_state = State(state.lhs, state.rhs, state.dot + 1, state.start);
-                  if (chart.at(i + 1).insert(new_state).second)
-                  {
-                    log::debug("    - Ponto avançou para '" + sym->to_string() + "' e foi adicionado no próximo chart ");
-                    added = true;
-                  }
-                }
-              }
-            }
-          }
+          if (this->complete(chart, state, i))
+            added = true;
         }
         else
-        { // complete
-          log::debug("    - State completo, retornado aos states da iteração " + std::to_string(state.start));
-          StateSet start_chart = chart.at(state.start);
-          for (const auto &s : start_chart)
+        {
+          std::optional<GSymbol> sym = state.next_symbol();
+          if (!sym.has_value())
+            continue;
+
+          if (sym->type == SymbolType::NON_TERMINAL)
           {
-            log::debug("    - State capturado: " + s.to_string());
-            if (!s.is_complete())
-            {
-              const std::optional<GSymbol> sym = s.next_symbol();
-              if (sym.has_value() && sym->type == SymbolType::NON_TERMINAL && sym->value == (u8)state.lhs) // state avança se o próximo símbolo for o mesmo que completou por último em outro chart
-              {
-                State new_state = State(s.lhs, s.rhs, s.dot + 1, s.start);
-                if (chart.at(i).insert(new_state).second)
-                {
-                  log::debug("      - State avança: " + new_state.to_string());
-                  added = true;
-                }
-              }
-            }
+            if (this->predict(chart, state, *sym, i))
+              added = true;
+          }
+          else
+          {
+            if (this->scan(chart, state, *sym, i, tokens))
+              added = true;
           }
         }
       }
@@ -182,14 +130,86 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
     }
   }
 
-  log::debug("States no chart " + std::to_string(n) + ": ");
-  for (const auto &s : chart.at(n))
+  return this->has_ended(chart, n);
+}
+
+bool parser::Parser::predict(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 i)
+{
+  bool added = false;
+  i8 idx = grammar::contains_key(symbol);
+  if (idx == -1)
+    return false;
+
+  for (const auto &prod : this->grammar->at(idx).rhs)
+  {
+    State new_state(static_cast<NT>(symbol.value), &prod, 0, i);
+    if (chart.at(i).insert(new_state).second)
+    {
+      log::debug("      - Predict: " + new_state.to_string());
+      added = true;
+    }
+  }
+  return added;
+}
+
+bool parser::Parser::scan(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 it, const std::vector<Token> &tokens)
+{
+  if (symbol.type == SymbolType::LAMBDA)
+  {
+    State new_state = State(state.lhs, state.rhs, state.dot + 1, state.start);
+    if (chart.at(it).insert(new_state).second)
+      return true;
+  }
+  else
+  {
+    if (it < tokens.size() && symbol.value == (u8)map_token(tokens.at(it)))
+    {
+      State new_state(state.lhs, state.rhs, state.dot + 1, state.start);
+      if (chart.at(it + 1).insert(new_state).second)
+      {
+        log::debug("      - Scan: " + new_state.to_string());
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+bool parser::Parser::complete(std::vector<StateSet> &chart, const State &state, u64 it)
+{
+  bool added = false;
+  log::debug("    - State completo, retornado aos states da iteração " + std::to_string(state.start));
+  StateSet start_chart = chart.at(state.start);
+  for (const auto &s : start_chart)
+  {
+    log::debug("    - State capturado: " + s.to_string());
+    if (s.is_complete())
+      continue;
+
+    const std::optional<GSymbol> sym = s.next_symbol();
+    if (sym.has_value() && sym->type == SymbolType::NON_TERMINAL && sym->value == (u8)state.lhs) // state avança se o próximo símbolo for o mesmo que completou por último em outro chart
+    {
+      State new_state = State(s.lhs, s.rhs, s.dot + 1, s.start);
+      if (chart.at(it).insert(new_state).second)
+      {
+        log::debug("      - State avança: " + new_state.to_string());
+        added = true;
+      }
+    }
+  }
+  return added;
+}
+
+bool parser::Parser::has_ended(const std::vector<StateSet> &chart, u64 last)
+{
+  for (const auto &s : chart.at(last))
   {
     log::debug(s.to_string() + "\n");
     if (s.lhs == start_symbol && s.is_complete() && s.start == 0)
-      return 1;
+      return true;
   }
-  return 0;
+  return false;
 }
 
 static T map_token(const Token &t)
@@ -282,7 +302,4 @@ static T map_token(const Token &t)
   default:
     return T::END;
   }
-
-  log::debug("token: " + t.to_string());
-  throw std::runtime_error("erro aqui nesse carai");
 }

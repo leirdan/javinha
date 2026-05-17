@@ -67,17 +67,42 @@ namespace jc
       }
     };
 
-    using StateSet = std::unordered_set<State>;
+    struct StateHash
+    {
+      std::size_t operator()(const State &s) const noexcept
+      {
+        std::size_t h = std::hash<int>{}(static_cast<int>(s.lhs));
+        h ^= std::hash<jc::u8>{}(s.dot) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        h ^= std::hash<jc::u64>{}(s.start) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        h ^= std::hash<const jc::grammar::GProduction *>{}(s.rhs) + 0x9e3779b9 + (h << 6) + (h >> 2);
+        return h;
+      }
+    };
+
+    using StateSet = std::unordered_set<State, StateHash>;
 
     class Parser
     {
+    private:
       SymbolTable symbols;
       std::vector<ParserError> errors;
+      const Grammar *grammar = &grammar::grammar;
+
+      [[nodiscard]]
+      bool scan(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 i, const std::vector<Token> &tokens);
+
+      [[nodiscard]]
+      bool predict(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 i);
+
+      [[nodiscard]]
+      bool complete(std::vector<StateSet> &chart, const State &current_state, u64 iteration);
+
+      [[nodiscard]]
+      bool has_ended(const std::vector<StateSet> &chart, u64 last);
 
     public:
       // Parser(std::vector<Token> &&tokens, const SymbolTable &symbols) : tokens(std::move(tokens)), symbols(symbol_table) {};
-      Parser(const SymbolTable &&symbols) : symbols(symbols) {
-                                            };
+      Parser(const SymbolTable &&symbols) : symbols(symbols) {};
 
       bool earley_parse(const std::vector<Token> &&tokens);
 
@@ -97,20 +122,4 @@ namespace jc
       }
     };
   }
-}
-
-namespace std
-{
-  template <>
-  struct hash<jc::parser::State>
-  {
-    size_t operator()(const jc::parser::State &s) const noexcept
-    {
-      size_t h = std::hash<int>{}(static_cast<int>(s.lhs));
-      h ^= std::hash<jc::u8>{}(s.dot) + 0x9e3779b9 + (h << 6) + (h >> 2);
-      h ^= std::hash<jc::u64>{}(s.start) + 0x9e3779b9 + (h << 6) + (h >> 2);
-      h ^= std::hash<const jc::grammar::GProduction *>{}(s.rhs) + 0x9e3779b9 + (h << 6) + (h >> 2);
-      return h;
-    }
-  };
 }
