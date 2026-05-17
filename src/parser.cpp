@@ -124,7 +124,7 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
     {
       log::debug("ERRO SINTÁTICO: Falha ao processar o token '" + tokens.at(i).to_string() + "'");
 
-      std::string expected_msg = "Esperava-se os terminais (IDs): ";
+      std::string expected_msg = "";
       for (const auto &s : chart.at(i))
       {
         auto sym = s.next_symbol();
@@ -133,7 +133,9 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
           expected_msg += sym->to_string() + " "; //  std::to_string(sym->value) + " ";
         }
       }
-      log::debug(std::move(expected_msg));
+
+      add_error(i, "Falha ao processar o token", tokens.at(i).to_string(), expected_msg);
+      log::debug("ERRO SINTÁTICO adicionado à lista de erros");
 
       bool recovered = false;
 

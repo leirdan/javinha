@@ -83,5 +83,15 @@ int main(int argc, char *argv[])
     std::cout << "Programa sintaticamente incorreto. \n";
   }
 
+  if (parser.has_errors())
+  {
+    std::cout << "\n===== ERROS SINTÁTICOS ENCONTRADOS =====\n";
+    for (const auto &error : parser.get_errors())
+    {
+      std::cout << error.to_string() << "\n";
+    }
+    std::cout << "=========================================\n";
+  }
+
   return 0;
 }

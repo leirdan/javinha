@@ -4,6 +4,7 @@
 #include <functional>
 #include "grammar.hpp"
 #include <unordered_set>
+#include <vector>
 
 namespace jc
 {
@@ -11,6 +12,23 @@ namespace jc
 
   namespace parser
   {
+    struct ParserError
+    {
+      u64 token_position;
+      std::string message;
+      std::string token_found;
+      std::string expected_tokens;
+
+      ParserError(u64 pos, const std::string &msg, const std::string &found, const std::string &expected)
+          : token_position(pos), message(msg), token_found(found), expected_tokens(expected) {}
+
+      std::string to_string() const
+      {
+        return "[ERRO SINTÁTICO em posição " + std::to_string(token_position) + "] " +
+               message + " | Token: " + token_found + " | Esperava: " + expected_tokens;
+      }
+    };
+
     struct State
     {
       const GProduction *rhs;
@@ -54,6 +72,7 @@ namespace jc
     class Parser
     {
       SymbolTable symbols;
+      std::vector<ParserError> errors;
 
     public:
       // Parser(std::vector<Token> &&tokens, const SymbolTable &symbols) : tokens(std::move(tokens)), symbols(symbol_table) {};
@@ -61,6 +80,21 @@ namespace jc
                                             };
 
       bool earley_parse(const std::vector<Token> &&tokens);
+
+      void add_error(u64 pos, const std::string &msg, const std::string &found, const std::string &expected)
+      {
+        errors.emplace_back(pos, msg, found, expected);
+      }
+
+      const std::vector<ParserError> &get_errors() const
+      {
+        return errors;
+      }
+
+      bool has_errors() const
+      {
+        return !errors.empty();
+      }
     };
   }
 }
