@@ -264,8 +264,6 @@ static T map_token(const Token &t)
       return T::NOT;
     else if (t.value == ">")
       return T::GT;
-    else if (t.value == "<")
-      return T::LT;
   case TokenType::KEYWORD:
     if (t.value == "class")
       return T::CLASS;

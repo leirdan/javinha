@@ -21,34 +21,27 @@ namespace jc
       PROG,
       MAINC,
       DEFCL,
-      DEFCL2,
-      DEFCL3,
-      DEFCL4,
-      DEFCL5,
-      DEFCL6,
       DEFVAR,
-      DEFVAR2,
       DEFMET,
-      DEFMET2,
-      DEFMET3,
-      DEFMET4,
       TYPE,
-      TYPE2,
       ARGS,
-      ARGS2,
       CMD,
-      CMD2,
       EXP,
       EXP2,
-      EXP3,
+      GREATER,
+      GREATER2,
+      ADD,
+      ADD2,
+      MUL,
+      MUL2,
+      NEG,
+      OBJ,
+      OBJ2,
+      ATOMEXP,
       LISTEXP,
-      LISTEXP2,
-      LISTEXP3,
       ID,
-      ID2,
       CHAR,
       WORD,
-      WORD2,
       NUMBER
     };
 
@@ -78,7 +71,6 @@ namespace jc
       MINUS,
       MULT,
       GT,
-      LT,
       AND,
       NOT,
       ASSIGN,
@@ -147,7 +139,6 @@ namespace jc
       }
     };
 
-    // Até 24 símbolos na regra, mais do que o necessário
     struct GProduction
     {
       std::array<GSymbol, 24> data{};
@@ -215,107 +206,52 @@ namespace jc
     };
 
     const static NT start_symbol = NT::START;
-    const u8 rules = 11;
-
+    const u8 rules = 26;
     using Grammar = std::array<GRule, rules>;
-    static Grammar grammar = {
-        // START
-        GRule{.rhs = {GProduction{GSymbol::N(NT::PROG), GSymbol::T(T::END)}}, .lhs = NT::START},
-        // PROG
-        GRule{
-            .rhs = {
-                GProduction{GSymbol::N(NT::MAINC), GSymbol::N(NT::DEFCL)}},
-            .lhs = NT::PROG},
-        // MAINC
-        GRule{.rhs = {GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::T(T::PUBLIC), GSymbol::T(T::STATIC), GSymbol::T(T::VOID), GSymbol::T(T::MAIN), GSymbol::T(T::LPAR), GSymbol::T(T::STRING), GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET), GSymbol::T(T::ID), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::CMD), GSymbol::T(T::RBRACE), GSymbol::T(T::RBRACE)}}, .lhs = NT::MAINC},
-        // DEFCL
-        GRule{.rhs = {GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::DEFMET), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFCL)}, GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::EXTENDS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::DEFMET), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFCL)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFCL},
-        // DEFVAR
-        GRule{.rhs = {GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::SEMICOLON), GSymbol::N(NT::DEFVAR)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFVAR},
-        // DEFMET
-        GRule{.rhs = {GProduction{GSymbol::T(T::PUBLIC), GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::N(NT::ARGS), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::CMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET)}, GProduction{GSymbol::T(T::PUBLIC), GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::CMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFMET},
-        // TYPE
-        GRule{.rhs = {GProduction{GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET)}, GProduction{GSymbol::T(T::BOOLEAN)}, GProduction{GSymbol::T(T::INT)}, GProduction{GSymbol::T(T::ID)}}, .lhs = NT::TYPE},
-        // ARGS
-        GRule{.rhs = {GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID)}, GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::COMMA), GSymbol::N(NT::ARGS)}}, .lhs = NT::ARGS},
-        // CMD
-        GRule{.rhs = {GProduction{GSymbol::T(T::LBRACE), GSymbol::N(NT::CMD), GSymbol::T(T::RBRACE)}, GProduction{GSymbol::T(T::IF), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD), GSymbol::T(T::ELSE), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::WHILE), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::SYSTEM), GSymbol::T(T::DOT), GSymbol::T(T::OUT), GSymbol::T(T::DOT), GSymbol::T(T::PRINTLN), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}}, .lhs = NT::CMD},
-        // EXP
-        GRule{.rhs = {GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::AND), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::LT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::GT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::PLUS), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::MINUS), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::MULT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::DOT), GSymbol::T(T::LENGTH)}, GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::DOT), GSymbol::N(NT::EXP), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::NEW), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::NOT), GSymbol::N(NT::EXP)}, GProduction{GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::TRUE)}, GProduction{GSymbol::T(T::FALSE)}, GProduction{GSymbol::T(T::ID)}, GProduction{GSymbol::T(T::NUMBER)}, GProduction{GSymbol::T(T::THIS)}, GProduction{GSymbol::T(T::NEW), GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}}, .lhs = NT::EXP},
-        // LISTEXP
-        GRule{.rhs = {GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::COMMA), GSymbol::N(NT::LISTEXP)}, GProduction{GSymbol::N(NT::EXP)}, GProduction{GSymbol::L()}}, .lhs = NT::LISTEXP}};
 
-    // static std::array<GRule, rules> grammar = {
-    //     // PROG
-    //     GRule{.rhs = {{GSymbol::N(NT::MAINC), GSymbol::N(NT::DEFCL)}}, .lhs = NT::PROG},
-    //     // MAINC
-    //     {.rhs = {{GSymbol::T(T::CLASS), GSymbol::N(NT::ID), GSymbol::T(T::LBRACE), GSymbol::T(T::PUBLIC), GSymbol::T(T::STATIC), GSymbol::T(T::VOID), GSymbol::T(T::MAIN), GSymbol::T(T::LPAR), GSymbol::T(T::STRING), GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET), GSymbol::N(NT::ID), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::CMD), GSymbol::T(T::RBRACE), GSymbol::T(T::RBRACE)}}, .lhs = NT::MAINC},
-    //     // DEFCL
-    //     {.rhs = {{GSymbol::T(T::CLASS), GSymbol::N(NT::ID), GSymbol::N(NT::DEFCL2)}}, .lhs = NT::DEFCL},
-    //     // DEFCL2
-    //     {.rhs = {{GSymbol::N(NT::DEFCL3)}, {GSymbol::T(T::EXTENDS), GSymbol::N(NT::ID), GSymbol::N(NT::DEFCL3)}}, .lhs = NT::DEFCL2},
-    //     // DEFCL3
-    //     {.rhs = {{GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFCL4), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFCL6)}}, .lhs = NT::DEFCL3},
-    //     // DEFCL4
-    //     {
-    //         .rhs = {{GSymbol::N(NT::DEFVAR), GSymbol::N(NT::DEFCL5)}, {GSymbol::N(NT::DEFCL5)}},
-    //         .lhs = NT::DEFCL4,
-    //     },
-    //     // DEFCL5
-    //     {.rhs = {{GSymbol::N(NT::DEFMET)}, {GSymbol::L()}}, .lhs = NT::DEFCL5},
-    //     // DEFCL6
-    //     {.rhs = {{GSymbol::N(NT::DEFCL)}, {GSymbol::L()}}, .lhs = NT::DEFCL6},
-    //     // DEFVAR
-    //     {.rhs = {{GSymbol::N(NT::TYPE), GSymbol::N(NT::ID), GSymbol::T(T::SEMICOLON), GSymbol::N(NT::DEFVAR2)}}, .lhs = NT::DEFVAR},
-    //     // DEFVAR2
-    //     {.rhs = {{GSymbol::N(NT::DEFVAR)}, {GSymbol::L()}}, .lhs = NT::DEFVAR2},
-    //     // DEFMET
-    //     {.rhs = {{GSymbol::T(T::PUBLIC), GSymbol::N(NT::TYPE), GSymbol::N(NT::ID), GSymbol::T(T::LPAR), GSymbol::N(NT::DEFMET2)}}, .lhs = NT::DEFMET},
-    //     // DEFMET2
-    //     {.rhs = {{GSymbol::N(NT::ARGS), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFMET3)}, {GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFMET3)}}, .lhs = NT::DEFMET2},
-    //     // DEFMET3
-    //     {.rhs = {{GSymbol::N(NT::DEFVAR), GSymbol::N(NT::CMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET4)}, {GSymbol::N(NT::CMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET4)}}, .lhs = NT::DEFMET3},
-    //     // DEFMET4
-    //     {.rhs = {{GSymbol::N(NT::DEFMET)}, {GSymbol::L()}}, .lhs = NT::DEFMET4},
-    //     // TYPE
-    //     {.rhs = {{GSymbol::T(T::INT), GSymbol::N(NT::TYPE2)}, {GSymbol::T(T::BOOLEAN)}}, .lhs = NT::TYPE},
-    //     // TYPE2
-    //     {.rhs = {{GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET)}, {GSymbol::L()}}, .lhs = NT::TYPE2},
-    //     // ARGS
-    //     {.rhs = {{GSymbol::N(NT::TYPE), GSymbol::N(NT::ID), GSymbol::N(NT::ARGS2)}}, .lhs = NT::ARGS},
-    //     // ARGS2
-    //     {.rhs = {{GSymbol::T(T::DOT), GSymbol::N(NT::ARGS)}, {GSymbol::L()}}, .lhs = NT::ARGS2},
-    //     // CMD
-    //     {.rhs = {{GSymbol::T(T::LBRACE), GSymbol::N(NT::CMD), GSymbol::T(T::RBRACE)}, {GSymbol::T(T::IF), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD), GSymbol::T(T::ELSE), GSymbol::N(NT::CMD)}, {GSymbol::T(T::WHILE), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD)}, {GSymbol::T(T::SYSTEM), GSymbol::T(T::DOT), GSymbol::T(T::OUT), GSymbol::T(T::DOT), GSymbol::T(T::PRINTLN), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::T(T::SEMICOLON)}, {GSymbol::N(NT::ID), GSymbol::N(NT::CMD2)}}, .lhs = NT::CMD},
-    //     // CMD2
-    //     {.rhs = {{GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}, {GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}}, .lhs = NT::CMD2},
-    //     // EXP
-    //     {.rhs = {{GSymbol::T(T::NEW), GSymbol::N(NT::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::NOT), GSymbol::N(NT::EXP), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::TRUE), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::FALSE), GSymbol::N(NT::EXP2)}, {GSymbol::N(NT::ID), GSymbol::N(NT::EXP2)}, {GSymbol::N(NT::NUMBER), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::THIS), GSymbol::N(NT::EXP2)}, {GSymbol::T(T::NEW), GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::N(NT::EXP2)}}, .lhs = NT::EXP},
-    //     // EXP2
-    //     {
-    //         .rhs = {{GSymbol::T(T::AND), GSymbol::N(NT::EXP)}, {GSymbol::T(T::GT), GSymbol::N(NT::EXP)}, {GSymbol::T(T::PLUS), GSymbol::N(NT::EXP)}, {GSymbol::T(T::MINUS), GSymbol::N(NT::EXP)}, {GSymbol::T(T::MULT), GSymbol::N(NT::EXP)}, {GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}, {GSymbol::T(T::DOT), GSymbol::N(NT::EXP3)}, {GSymbol::L()}},
-    //         .lhs = NT::EXP2,
-    //     },
-    //     // EXP3
-    //     {.rhs = {{GSymbol::T(T::LENGTH)}, {GSymbol::N(NT::EXP), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR)}, {GSymbol::N(NT::ID), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR)}}, .lhs = NT::EXP3},
-    //     // LISTEXP
-    //     {.rhs = {{GSymbol::N(NT::EXP), GSymbol::N(NT::LISTEXP2)}}, .lhs = NT::LISTEXP},
-    //     // LISTEXP2
-    //     {.rhs = {{GSymbol::T(T::DOT), GSymbol::N(NT::LISTEXP3)}, {GSymbol::L()}}, .lhs = NT::LISTEXP2},
-    //     // LISTEXP3
-    //     {.rhs = {{GSymbol::N(NT::LISTEXP)}, {GSymbol::L()}}, .lhs = NT::LISTEXP3},
-    //     // ID
-    //     {.rhs = {{GSymbol::T(T::ID)}}, .lhs = NT::ID},
-    //     // NUMBER
-    //     {.rhs = {{GSymbol::T(T::NUMBER)}}, .lhs = NT::NUMBER},
-    //     // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID},
-    //     // {.rhs = {{GSymbol::N(NT::WORD)}, {GSymbol::L()}}, .lhs = NT::ID2},
-    //     // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID},
-    //     // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID},
-    //     // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID},
-    //     // {.rhs = {{GSymbol::N(NT::CHAR), GSymbol::N(NT::ID2)}}, .lhs = NT::ID}};
+    const static Grammar grammar = {{GRule{.rhs = {GProduction{GSymbol::N(NT::PROG), GSymbol::T(T::END)}}, .lhs = NT::START},
 
-    // };
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::MAINC), GSymbol::N(NT::DEFCL)}}, .lhs = NT::PROG},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::T(T::PUBLIC), GSymbol::T(T::STATIC), GSymbol::T(T::VOID), GSymbol::T(T::MAIN), GSymbol::T(T::LPAR), GSymbol::T(T::STRING), GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET), GSymbol::T(T::ID), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::CMD), GSymbol::T(T::RBRACE), GSymbol::T(T::RBRACE)}}, .lhs = NT::MAINC},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::DEFMET), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFCL)}, GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::EXTENDS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::DEFMET), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFCL)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFCL},
+
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::SEMICOLON), GSymbol::N(NT::DEFVAR)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFVAR},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::PUBLIC), GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::N(NT::ARGS), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::CMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET)}, GProduction{GSymbol::T(T::PUBLIC), GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::CMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFMET},
+
+                                     GRule{.rhs = std::vector<GProduction>{GProduction{GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET)}, GProduction{GSymbol::T(T::BOOLEAN)}, GProduction{GSymbol::T(T::INT)}, GProduction{GSymbol::T(T::ID)}}, .lhs = NT::TYPE},
+
+                                     GRule{.rhs = std::vector<GProduction>{GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID)}, GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::COMMA), GSymbol::N(NT::ARGS)}}, .lhs = NT::ARGS},
+
+                                     GRule{.rhs = std::vector<GProduction>{GProduction{GSymbol::T(T::LBRACE), GSymbol::N(NT::CMD), GSymbol::T(T::RBRACE)}, GProduction{GSymbol::T(T::IF), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD), GSymbol::T(T::ELSE), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::WHILE), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::SYSTEM), GSymbol::T(T::DOT), GSymbol::T(T::OUT), GSymbol::T(T::DOT), GSymbol::T(T::PRINTLN), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}}, .lhs = NT::CMD},
+
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::GREATER), GSymbol::N(NT::EXP2)}}, .lhs = NT::EXP},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::AND), GSymbol::N(NT::GREATER), GSymbol::N(NT::EXP2)}, GProduction{GSymbol::L()}}, .lhs = NT::EXP2},
+
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::ADD), GSymbol::N(NT::GREATER2)}}, .lhs = NT::GREATER},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::GT), GSymbol::N(NT::ADD), GSymbol::N(NT::GREATER2)}, GProduction{GSymbol::L()}}, .lhs = NT::GREATER2},
+
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::MUL), GSymbol::N(NT::ADD2)}}, .lhs = NT::ADD},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::PLUS), GSymbol::N(NT::MUL), GSymbol::N(NT::ADD2)}, GProduction{GSymbol::T(T::MINUS), GSymbol::N(NT::MUL), GSymbol::N(NT::ADD2)}, GProduction{GSymbol::L()}}, .lhs = NT::ADD2},
+
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::NEG), GSymbol::N(NT::MUL2)}}, .lhs = NT::MUL},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::MULT), GSymbol::N(NT::NEG), GSymbol::N(NT::MUL2)}, GProduction{GSymbol::L()}}, .lhs = NT::MUL2},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::NOT), GSymbol::N(NT::NEG)}, GProduction{GSymbol::N(NT::OBJ)}}, .lhs = NT::NEG},
+
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::ATOMEXP), GSymbol::N(NT::OBJ2)}}, .lhs = NT::OBJ},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::N(NT::OBJ2)}, GProduction{GSymbol::T(T::DOT), GSymbol::T(T::LENGTH), GSymbol::N(NT::OBJ2)}, GProduction{GSymbol::T(T::DOT), GSymbol::N(NT::EXP), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR), GSymbol::N(NT::OBJ2)}, GProduction{GSymbol::L()}}, .lhs = NT::OBJ2},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::NEW), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::TRUE)}, GProduction{GSymbol::T(T::FALSE)}, GProduction{GSymbol::T(T::ID)}, GProduction{GSymbol::T(T::NUMBER)}, GProduction{GSymbol::T(T::THIS)}}, .lhs = NT::ATOMEXP},
+
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::COMMA), GSymbol::N(NT::LISTEXP)}, GProduction{GSymbol::N(NT::EXP)}, GProduction{GSymbol::L()}}, .lhs = NT::LISTEXP}}};
 
     // retorna o índice
     static i8 contains_key(const GSymbol &sym)
@@ -358,62 +294,48 @@ namespace jc
         return "MAINC";
       case NT::DEFCL:
         return "DEFCL";
-      case NT::DEFCL2:
-        return "DEFCL2";
-      case NT::DEFCL3:
-        return "DEFCL3";
-      case NT::DEFCL4:
-        return "DEFCL4";
-      case NT::DEFCL5:
-        return "DEFCL5";
-      case NT::DEFCL6:
-        return "DEFCL6";
       case NT::DEFVAR:
         return "DEFVAR";
-      case NT::DEFVAR2:
-        return "DEFVAR2";
       case NT::DEFMET:
         return "DEFMET";
-      case NT::DEFMET2:
-        return "DEFMET2";
-      case NT::DEFMET3:
-        return "DEFMET3";
-      case NT::DEFMET4:
-        return "DEFMET4";
       case NT::TYPE:
         return "TYPE";
-      case NT::TYPE2:
-        return "TYPE2";
       case NT::ARGS:
         return "ARGS";
-      case NT::ARGS2:
-        return "ARGS2";
       case NT::CMD:
         return "CMD";
-      case NT::CMD2:
-        return "CMD2";
       case NT::EXP:
         return "EXP";
       case NT::EXP2:
         return "EXP2";
-      case NT::EXP3:
-        return "EXP3";
+      case NT::GREATER:
+        return "GREATER";
+      case NT::GREATER2:
+        return "GREATER2";
+      case NT::ADD:
+        return "ADD";
+      case NT::ADD2:
+        return "ADD2";
+      case NT::MUL:
+        return "MUL";
+      case NT::MUL2:
+        return "MUL2";
+      case NT::NEG:
+        return "NEG";
+      case NT::OBJ:
+        return "OBJ";
+      case NT::OBJ2:
+        return "OBJ2";
+      case NT::ATOMEXP:
+        return "ATOMEXP";
       case NT::LISTEXP:
         return "LISTEXP";
-      case NT::LISTEXP2:
-        return "LISTEXP2";
-      case NT::LISTEXP3:
-        return "LISTEXP3";
       case NT::ID:
         return "ID";
-      case NT::ID2:
-        return "ID2";
       case NT::CHAR:
         return "CHAR";
       case NT::WORD:
         return "WORD";
-      case NT::WORD2:
-        return "WORD2";
       case NT::NUMBER:
         return "NUMBER";
       default:
@@ -473,8 +395,6 @@ namespace jc
         return "*";
       case T::GT:
         return ">";
-      case T::LT:
-        return "<";
       case T::AND:
         return "&&";
       case T::NOT:

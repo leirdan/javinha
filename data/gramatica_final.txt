@@ -1,4 +1,4 @@
-[GLC - Javinha]
+[GLC - Javinha but it's completely different but still Javinha]
 
 Start → Prog 'EOF'
 Prog → MainC DefCl
@@ -17,29 +17,35 @@ Type → ‘int ’ ‘[ ’ ‘] ’
 | Id
 Args → Type Id
 | Type Id ‘,’ Args
-Cmd → ‘{ ’ Cmd ‘} ’
+Cmd -> ‘{ ’ Cmd ‘} ’
 | ‘if ’ ‘( ’ Exp ‘) ’ Cmd else Cmd
 | ‘ while ’ ‘( ’ Exp ‘) ’ Cmd
 | ‘ System ’ ‘. ’ ‘out ’ ‘. ’ ‘ println ’ ‘( ’ Exp ‘) ’ ‘; ’
 | Id ‘= ’ Exp ‘; ’
 | Id ‘[ ’ Exp ‘] ’ ‘= ’ Exp ‘; ’
-Exp → Exp ‘&& ’ Exp
-| Exp ‘>’ Exp
-| Exp ‘+ ’ Exp
-| Exp ‘-’ Exp
-| Exp ‘* ’ Exp
-| Exp ‘[ ’ Exp ‘] ’
-| Exp ‘. ’ ‘ length ’
-| Exp ‘. ’ Exp ‘( ’ ListExp ‘) ’
-| ‘new ’ Id ‘( ’ ‘) ’
-| ‘! ’ Exp
-| ‘( ’ Exp ‘) ’
-| ‘ true ’
-| ‘ false ’
+-- Adaptamos para inserir precedência na gramática sem modificar a linguagem! Quanto mais longe o símbolo da raiz (digamos, Exp), maior a procedência dele na evaluação, já que ele vai ser atingido primeiro na derivação.
+-- Para isso, colocamos entre o símbolo e a chamada da própria variável uma chamada à variável "abaixo".
+Exp -> Greater Exp2
+Exp2 -> '&&' Greater Exp2 | λ 
+Greater -> Add Greater2
+Greater2 -> '>' Add Greater2 | λ
+Add -> Mul Add2
+Add2 -> '+' Mul Add2 | '-' Mul Add2 | λ
+Mul -> Neg Mul2 
+Mul2 -> '*' Neg Mul2 | λ
+Neg -> '!' Neg | Obj 
+Obj -> AtomExp Obj2
+Obj2 -> '[' Exp ']' Obj2
+| '.' 'length' Obj2
+| '.' Exp '(' ListExp ')' Obj2
+| λ
+AtomExp -> 'new' Id '(' ')'
+| '(' Exp ')'
+| 'true'
+| 'false'
 | Id
 | Number
-| ‘ this ’
-| ‘new ’ ‘int ’ ‘[ ’ Exp ‘] ’
+| 'this'
 ListExp → Exp ‘,’ ListExp
 | Exp
 | λ
