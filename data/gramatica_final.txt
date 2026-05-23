@@ -25,6 +25,7 @@ Cmd -> ‘{ ’ Cmd ‘} ’
 | Id ‘[ ’ Exp ‘] ’ ‘= ’ Exp ‘; ’
 -- Adaptamos para inserir precedência na gramática sem modificar a linguagem! Quanto mais longe o símbolo da raiz (digamos, Exp), maior a procedência dele na evaluação, já que ele vai ser atingido primeiro na derivação.
 -- Para isso, colocamos entre o símbolo e a chamada da própria variável uma chamada à variável "abaixo".
+-- Ordem: Atomos/() -> [] -> . -> ! -> * -> +/- -> > -> &&
 Exp -> Greater Exp2
 Exp2 -> '&&' Greater Exp2 | λ 
 Greater -> Add Greater2
@@ -34,12 +35,13 @@ Add2 -> '+' Mul Add2 | '-' Mul Add2 | λ
 Mul -> Neg Mul2 
 Mul2 -> '*' Neg Mul2 | λ
 Neg -> '!' Neg | Obj 
-Obj -> AtomExp Obj2
-Obj2 -> '[' Exp ']' Obj2
-| '.' 'length' Obj2
-| '.' Exp '(' ListExp ')' Obj2
+Obj -> ObjAtom ObjMet
+ObjMet -> '.' 'length' ObjMet 
+| '.' Id '( ListExp ')' ObjMet
+| '[' Exp ']' ObjMet
 | λ
-AtomExp -> 'new' Id '(' ')'
+ObjAtom -> 'new' Id '(' ')'
+| 'new' 'int' '[' Exp ']'
 | '(' Exp ')'
 | 'true'
 | 'false'

@@ -36,8 +36,8 @@ namespace jc
       MUL2,
       NEG,
       OBJ,
-      OBJ2,
-      ATOMEXP,
+      OBJMET,
+      OBJATOM,
       LISTEXP,
       ID,
       CHAR,
@@ -141,7 +141,7 @@ namespace jc
 
     struct GProduction
     {
-      std::array<GSymbol, 24> data{};
+      std::array<GSymbol, 20> data{};
       u8 size = 0;
 
       constexpr GProduction(std::initializer_list<GSymbol> init)
@@ -206,7 +206,7 @@ namespace jc
     };
 
     const static NT start_symbol = NT::START;
-    const u8 rules = 26;
+    const u8 rules = 28;
     using Grammar = std::array<GRule, rules>;
 
     const static Grammar grammar = {{GRule{.rhs = {GProduction{GSymbol::N(NT::PROG), GSymbol::T(T::END)}}, .lhs = NT::START},
@@ -245,11 +245,11 @@ namespace jc
 
                                      GRule{.rhs = {GProduction{GSymbol::T(T::NOT), GSymbol::N(NT::NEG)}, GProduction{GSymbol::N(NT::OBJ)}}, .lhs = NT::NEG},
 
-                                     GRule{.rhs = {GProduction{GSymbol::N(NT::ATOMEXP), GSymbol::N(NT::OBJ2)}}, .lhs = NT::OBJ},
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::OBJATOM), GSymbol::N(NT::OBJMET)}}, .lhs = NT::OBJ},
 
-                                     GRule{.rhs = {GProduction{GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::N(NT::OBJ2)}, GProduction{GSymbol::T(T::DOT), GSymbol::T(T::LENGTH), GSymbol::N(NT::OBJ2)}, GProduction{GSymbol::T(T::DOT), GSymbol::N(NT::EXP), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR), GSymbol::N(NT::OBJ2)}, GProduction{GSymbol::L()}}, .lhs = NT::OBJ2},
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::DOT), GSymbol::T(T::LENGTH), GSymbol::N(NT::OBJMET)}, GProduction{GSymbol::T(T::DOT), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::N(NT::LISTEXP), GSymbol::T(T::RPAR), GSymbol::N(NT::OBJMET)}, GProduction{GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::N(NT::OBJMET)}, GProduction{GSymbol::L()}}, .lhs = NT::OBJMET},
 
-                                     GRule{.rhs = {GProduction{GSymbol::T(T::NEW), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::TRUE)}, GProduction{GSymbol::T(T::FALSE)}, GProduction{GSymbol::T(T::ID)}, GProduction{GSymbol::T(T::NUMBER)}, GProduction{GSymbol::T(T::THIS)}}, .lhs = NT::ATOMEXP},
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::NEW), GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET)}, GProduction{GSymbol::T(T::NEW), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR)}, GProduction{GSymbol::T(T::TRUE)}, GProduction{GSymbol::T(T::FALSE)}, GProduction{GSymbol::T(T::ID)}, GProduction{GSymbol::T(T::NUMBER)}, GProduction{GSymbol::T(T::THIS)}}, .lhs = NT::OBJATOM},
 
                                      GRule{.rhs = {GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::COMMA), GSymbol::N(NT::LISTEXP)}, GProduction{GSymbol::N(NT::EXP)}, GProduction{GSymbol::L()}}, .lhs = NT::LISTEXP}}};
 
@@ -324,10 +324,10 @@ namespace jc
         return "NEG";
       case NT::OBJ:
         return "OBJ";
-      case NT::OBJ2:
-        return "OBJ2";
-      case NT::ATOMEXP:
-        return "ATOMEXP";
+      case NT::OBJATOM:
+        return "OBJATOM";
+      case NT::OBJMET:
+        return "OBJMET";
       case NT::LISTEXP:
         return "LISTEXP";
       case NT::ID:

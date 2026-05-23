@@ -10,10 +10,21 @@ class Fac {
 	int num_aux ;
 		//if (num < 1)
 	if (1 > num)
-	    num_aux = 1 ;
+	    num_aux = 1 ; 
 	else 
 	    num_aux = num * (this.ComputeFac(num-1)) ;
 	return num_aux ;
     }
 
 }
+
+/*
+Escopos ->
+0: Global 
+1: Factorial
+2: Factorial + main
+3: Fac 
+4: Fac + ComputeFac
+5: Fac + ComputeFac + if (1 > num)
+6: Fac + ComputeFac + else (1 > num)
+*/
