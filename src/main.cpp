@@ -5,23 +5,25 @@
 #include "types.hpp"
 #include "preprocessor.hpp"
 #include "lexer.hpp"
+#include "parser.hpp"
+#include "utils.hpp"
 
 using namespace jc;
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
-  if (argc != 3) 
+  if (argc != 3)
   {
-    std::cerr << "usage: ./compiler input.ling output.txt\n";
+    std::cerr << "usage: ./javinha_release input.ling output.txt\n";
     return EXIT_FAILURE;
   }
 
-  char* input_file = argv[1];
-  char* output_file = argv[2];
+  char *input_file = argv[1];
+  char *output_file = argv[2];
 
   std::ifstream f_stream(input_file);
-  if (!f_stream.is_open()) 
-  { 
+  if (!f_stream.is_open())
+  {
     std::cerr << "file not found\n";
     return EXIT_FAILURE;
   }
@@ -34,36 +36,62 @@ int main(int argc, char *argv[])
   std::string buffer1 = pre::remove_comments(std::move(program_buff));
   std::string clean_code = pre::minify(std::move(buffer1));
 
-  Lexer lexer(clean_code);
+  Lexer *lexer = new Lexer(clean_code);
 
-  std::vector<Token> tokens = lexer.tokenize();
-  SymbolTable symbols = lexer.move_symbols();
+  std::vector<Token> tokens = lexer->tokenize();
+  SymbolTable symbols = lexer->move_symbols();
+
+  delete lexer;
 
   std::ofstream o_stream(output_file);
 
-  if (!o_stream.is_open()) {
+  if (!o_stream.is_open())
+  {
     std::cerr << "error creating output file\n";
     return EXIT_FAILURE;
   }
 
   // imprimir tokens
   o_stream << "TOKENS:\n";
-  for (const auto& t : tokens) {
+  for (const auto &t : tokens)
+  {
     o_stream << "(" << to_string(t.type) << ", " << t.value
              << ") [linha " << t.line << "]\n";
   }
 
   o_stream << "\nSYMBOL TABLE:\n";
-  for (const auto& [k, v] : symbols.get_all()) {
+  for (const auto &[k, v] : symbols.get_all())
+  {
     o_stream << v.name
-            << " | categoria: " << v.category
-            << " | tipo: " << v.type
-            << " | linha: " << v.line << "\n";
+             << " | categoria: " << v.category
+             << " | tipo: " << v.type
+             << " | linha: " << v.line << "\n";
   }
 
   o_stream.close();
 
   std::cout << "Analise lexica concluida com sucesso.\n";
+
+  jc::parser::Parser parser(std::move(symbols));
+  bool res = parser.earley_parse(std::move(tokens));
+  if (res && !parser.has_errors())
+  {
+    std::cout << "Programa sintaticamente válido. \n";
+  }
+  else if (parser.has_errors())
+  {
+    std::cout << "Programa sintaticamente incorreto. \n";
+  }
+
+  if (parser.has_errors())
+  {
+    std::cout << "\n===== ERROS SINTÁTICOS ENCONTRADOS =====\n";
+    for (const auto &error : parser.get_errors())
+    {
+      std::cout << error.to_string() << "\n";
+    }
+    std::cout << "=========================================\n";
+  }
 
   return 0;
 }

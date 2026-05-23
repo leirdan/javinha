@@ -7,11 +7,11 @@ set(APP_NAME "javinha")
 set(INCLUDE_DIR "include")
 
 # set compiler flags for both scenarios
-set(DEBUG_COMPILE_OPTIONS "-Wall" "-pedantic" "-g3" "-O0")
-set(RELEASE_COMPILE_OPTIONS "-O3" "-DNDEBUG")
+set(DEBUG_COMPILE_OPTIONS "-Wall" "-pedantic" "-g3" "-O0" "-std=c++20" "-DDEBUG")
+set(RELEASE_COMPILE_OPTIONS "-O3" "-DNDEBUG" "-std=c++20" "-UDEBUG")
 
 # set c++17 required
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 # sources
