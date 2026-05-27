@@ -82,7 +82,7 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
         }
       }
 
-      add_error(i, "Falha ao processar o token", tokens.at(i).to_string(), expected_msg);
+      add_error(i, tokens.at(i).line, "Falha ao processar o token", tokens.at(i).to_string(), expected_msg);
       log::debug("ERRO SINTÁTICO adicionado à lista de erros");
 
       bool recovered = false;

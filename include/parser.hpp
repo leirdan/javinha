@@ -15,16 +15,17 @@ namespace jc
     struct ParserError
     {
       u64 token_position;
+      u32 line_number;
       std::string message;
       std::string token_found;
       std::string expected_tokens;
 
-      ParserError(u64 pos, const std::string &msg, const std::string &found, const std::string &expected)
-          : token_position(pos), message(msg), token_found(found), expected_tokens(expected) {}
+      ParserError(u64 pos, u32 line, const std::string &msg, const std::string &found, const std::string &expected)
+          : token_position(pos), line_number(line), message(msg), token_found(found), expected_tokens(expected) {}
 
       std::string to_string() const
       {
-        return "[ERRO SINTÁTICO em posição " + std::to_string(token_position) + "] " +
+        return "[ERRO SINTÁTICO na linha " + std::to_string(line_number) + " (posição " + std::to_string(token_position) + ")] " +
                message + " | Token: " + token_found + " | Esperava: " + expected_tokens;
       }
     };
@@ -106,9 +107,9 @@ namespace jc
 
       bool earley_parse(const std::vector<Token> &&tokens);
 
-      void add_error(u64 pos, const std::string &msg, const std::string &found, const std::string &expected)
+      void add_error(u64 pos, u32 line, const std::string &msg, const std::string &found, const std::string &expected)
       {
-        errors.emplace_back(pos, msg, found, expected);
+        errors.emplace_back(pos, line, msg, found, expected);
       }
 
       const std::vector<ParserError> &get_errors() const
