@@ -24,7 +24,7 @@ return 55 ;
 	int j ;
 
 	j = 1 ;
-	while (j < (size)) {
+	while ((size) > j) {
 	    System.out.println(number[j]);
 	    j = j + 1 ;
 	}
@@ -38,8 +38,8 @@ ls01 = false ;
 achou = 0 ;
 	
 	//System.out.println(num);
-	while (j < (size)) {aux01 = number[j] ;aux02 = num + 1 ;if (aux01 < num) nt = 0 ;
-	    else if (!(aux01 < aux02)) nt = 0 ;
+	while (size > j) {aux01 = number[j] ;aux02 = num + 1 ;if (num > aux01) nt = 0 ;
+	    else if (!(aux02 > aux01)) nt = 0 ;
 	    else {ls01 = true ;achou = 1 ;j = size ;}
 	    j = j + 1 ;
 	}return achou ;
@@ -54,7 +54,7 @@ achou = 0 ;
 	size = sz ;
 	number = new int[sz] ;
 	
-	j = 1 ; k = size + 1 ; while (j < (size)) {
+	j = 1 ; k = size + 1 ; while (size > j) {
 	    aux01 = 2 * j ;
 	    aux02 = k - 3 ;  number[j] = aux01 + aux02 ;  j = j + 1 ; k = k - 1 ;
 	}

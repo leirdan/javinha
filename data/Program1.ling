@@ -15,7 +15,7 @@ class Funcao {
     public int funcao1(int num){
         // Uma variável aqui
 	    int n_aux ;
-	    if (num < 1)
+	    if (1 > num)
 	        n_aux = 1 ;
 	    else
             // Aqui tem algo
