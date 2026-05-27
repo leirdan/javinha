@@ -63,9 +63,11 @@ namespace jc
       Kind kind;
       virtual ~Node() = default;
 
-      protected:
-        explicit Node(Kind k) : kind(k) {}
+    protected:
+      explicit Node(Kind k) : kind(k) {}
     };
+
+    using NodePtr = Node *;
 
     struct TypeNode
     {
