@@ -8,8 +8,8 @@ DefCl → ‘ class ’ Id ‘{ ’ DefVar DefMet ‘} ’ DefCl
 | λ
 DefVar → Type Id ‘; ’ DefVar
 | λ
-DefMet → ‘ public ’ Type Id ‘( ’ Args ‘) ’ ‘{ ’ DefVar Cmd ‘ return ’ Exp ‘; ’ ‘} ’ DefMet
-| ‘ public ’ Type Id ‘( ’ ‘) ’ ‘{ ’ DefVar Cmd ‘ return ’ Exp ‘; ’ ‘} ’ DefMet
+DefMet → ‘ public ’ Type Id ‘( ’ Args ‘) ’ ‘{ ’ DefVar ListCmd ‘ return ’ Exp ‘; ’ ‘} ’ DefMet
+| ‘ public ’ Type Id ‘( ’ ‘) ’ ‘{ ’ DefVar ListCmd ‘ return ’ Exp ‘; ’ ‘} ’ DefMet
 | λ
 Type → ‘int ’ ‘[ ’ ‘] ’
 | ‘ boolean ’
@@ -17,7 +17,8 @@ Type → ‘int ’ ‘[ ’ ‘] ’
 | Id
 Args → Type Id
 | Type Id ‘,’ Args
-Cmd -> ‘{ ’ Cmd ‘} ’
+ListCmd -> Cmd ListCmd | λ
+Cmd -> ‘{ ’ ListCmd ‘} ’
 | ‘if ’ ‘( ’ Exp ‘) ’ Cmd else Cmd
 | ‘ while ’ ‘( ’ Exp ‘) ’ Cmd
 | ‘ System ’ ‘. ’ ‘out ’ ‘. ’ ‘ println ’ ‘( ’ Exp ‘) ’ ‘; ’

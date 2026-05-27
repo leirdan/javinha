@@ -25,6 +25,7 @@ namespace jc
       DEFMET,
       TYPE,
       ARGS,
+      LISTCMD,
       CMD,
       EXP,
       EXP2,
@@ -141,7 +142,7 @@ namespace jc
 
     struct GProduction
     {
-      std::array<GSymbol, 20> data{};
+      std::array<GSymbol, 24> data{};
       u8 size = 0;
 
       constexpr GProduction(std::initializer_list<GSymbol> init)
@@ -219,13 +220,15 @@ namespace jc
 
                                      GRule{.rhs = {GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::SEMICOLON), GSymbol::N(NT::DEFVAR)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFVAR},
 
-                                     GRule{.rhs = {GProduction{GSymbol::T(T::PUBLIC), GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::N(NT::ARGS), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::CMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET)}, GProduction{GSymbol::T(T::PUBLIC), GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::CMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFMET},
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::PUBLIC), GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::N(NT::ARGS), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::LISTCMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET)}, GProduction{GSymbol::T(T::PUBLIC), GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::LPAR), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::LISTCMD), GSymbol::T(T::RETURN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFMET)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFMET},
 
-                                     GRule{.rhs = std::vector<GProduction>{GProduction{GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET)}, GProduction{GSymbol::T(T::BOOLEAN)}, GProduction{GSymbol::T(T::INT)}, GProduction{GSymbol::T(T::ID)}}, .lhs = NT::TYPE},
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::INT), GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET)}, GProduction{GSymbol::T(T::BOOLEAN)}, GProduction{GSymbol::T(T::INT)}, GProduction{GSymbol::T(T::ID)}}, .lhs = NT::TYPE},
 
-                                     GRule{.rhs = std::vector<GProduction>{GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID)}, GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::COMMA), GSymbol::N(NT::ARGS)}}, .lhs = NT::ARGS},
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID)}, GProduction{GSymbol::N(NT::TYPE), GSymbol::T(T::ID), GSymbol::T(T::COMMA), GSymbol::N(NT::ARGS)}}, .lhs = NT::ARGS},
 
-                                     GRule{.rhs = std::vector<GProduction>{GProduction{GSymbol::T(T::LBRACE), GSymbol::N(NT::CMD), GSymbol::T(T::RBRACE)}, GProduction{GSymbol::T(T::IF), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD), GSymbol::T(T::ELSE), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::WHILE), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::SYSTEM), GSymbol::T(T::DOT), GSymbol::T(T::OUT), GSymbol::T(T::DOT), GSymbol::T(T::PRINTLN), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}}, .lhs = NT::CMD},
+                                     GRule{.rhs = {GProduction{GSymbol::N(NT::CMD), GSymbol::N(NT::LISTCMD)}, GProduction{GSymbol::L()}}, .lhs = NT::LISTCMD},
+
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::LBRACE), GSymbol::N(NT::LISTCMD), GSymbol::T(T::RBRACE)}, GProduction{GSymbol::T(T::IF), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD), GSymbol::T(T::ELSE), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::WHILE), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::N(NT::CMD)}, GProduction{GSymbol::T(T::SYSTEM), GSymbol::T(T::DOT), GSymbol::T(T::OUT), GSymbol::T(T::DOT), GSymbol::T(T::PRINTLN), GSymbol::T(T::LPAR), GSymbol::N(NT::EXP), GSymbol::T(T::RPAR), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}, GProduction{GSymbol::T(T::ID), GSymbol::T(T::LBRACKET), GSymbol::N(NT::EXP), GSymbol::T(T::RBRACKET), GSymbol::T(T::ASSIGN), GSymbol::N(NT::EXP), GSymbol::T(T::SEMICOLON)}}, .lhs = NT::CMD},
 
                                      GRule{.rhs = {GProduction{GSymbol::N(NT::GREATER), GSymbol::N(NT::EXP2)}}, .lhs = NT::EXP},
 
@@ -302,6 +305,8 @@ namespace jc
         return "TYPE";
       case NT::ARGS:
         return "ARGS";
+      case NT::LISTCMD:
+        return "LISTCMD";
       case NT::CMD:
         return "CMD";
       case NT::EXP:
