@@ -9,7 +9,6 @@ namespace jc
         IDENTIFIER,
         KEYWORD,
         NUMBER,
-        STRING,
         OPERATOR,
         DELIMITER,
         END_OF_FILE,
@@ -26,8 +25,6 @@ namespace jc
             return "KEYWORD";
         case TokenType::NUMBER:
             return "NUMBER";
-        case TokenType::STRING:
-            return "STRING";
         case TokenType::OPERATOR:
             return "OPERATOR";
         case TokenType::DELIMITER:

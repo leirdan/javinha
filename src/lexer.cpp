@@ -1,15 +1,15 @@
 #include "lexer.hpp"
 #include "types.hpp"
 #include <cctype>
+#include <format>
 #include <unordered_map>
 #include <iostream>
 #include <array>
+#include <variant>
 
 namespace jc
 {
-
-    // List of keywords (NOT DEFINITIVE)
-    static constexpr std::array<std::string_view, 15> keywords = {
+    static constexpr std::array<std::string_view, 14> keywords = {
         "class",
         "public",
         "static",
@@ -20,7 +20,6 @@ namespace jc
         "if",
         "else",
         "while",
-        // "for",
         "return",
         "new",
         "this",
@@ -31,10 +30,8 @@ namespace jc
         {'+', TokenType::OPERATOR},
         {'-', TokenType::OPERATOR},
         {'*', TokenType::OPERATOR},
-        {'/', TokenType::OPERATOR},
         {'=', TokenType::OPERATOR},
         {'!', TokenType::OPERATOR},
-        {'<', TokenType::OPERATOR},
         {'>', TokenType::OPERATOR},
         {';', TokenType::DELIMITER},
         {',', TokenType::DELIMITER},
@@ -46,8 +43,7 @@ namespace jc
         {'[', TokenType::DELIMITER},
         {']', TokenType::DELIMITER}};
 
-    static constexpr std::array<std::string_view, 8> double_ops = {
-        "==", "!=", "<=", ">=", "++", "--", "+=", "-="};
+    static constexpr std::array<std::string_view, 1> double_ops = {"&&"};
 
     Lexer::Lexer(std::string input) : input(std::move(input)) {}
 
@@ -157,38 +153,6 @@ namespace jc
             start_col};
     }
 
-    // String: "([^"\\]|\\.)*"
-    Token Lexer::string()
-    {
-        u32 start_col = col;
-        advance();
-
-        u32 start = pos;
-
-        while (peek() != '"' && peek() != '\0')
-        {
-            if (peek() == '\\')
-            {
-                advance();
-            }
-            advance();
-        }
-
-        std::string value = input.substr(start, pos - start);
-
-        if (peek() == '"')
-        {
-            advance();
-        }
-        else
-        {
-            std::cerr << "Erro lexico: string nao fechada na linha "
-                      << line << "\n";
-        }
-
-        return {TokenType::STRING, value, line, start_col};
-    }
-
     // Operator or Delimiter
     Token Lexer::op_or_delim()
     {
@@ -216,9 +180,10 @@ namespace jc
         return {TokenType::OPERATOR, lex, line, start_col};
     }
 
-    std::vector<Token> Lexer::tokenize()
+    std::variant<std::vector<Token>, std::vector<std::string>> Lexer::tokenize()
     {
         std::vector<Token> tokens;
+        std::vector<std::string> errors;
 
         while (pos < input.size())
         {
@@ -243,15 +208,10 @@ namespace jc
                 if (look < input.size() &&
                     (std::isalpha(input[look]) || input[look] == '_'))
                 {
-                    std::cerr << "Erro lexico: identificador invalido na linha "
-                              << line << "\n";
+                    errors.push_back(std::format("[ERRO LÉXICO] Identificador inválido na linha {}. \n", line));
                 }
 
                 tokens.push_back(number());
-            }
-            else if (c == '"')
-            {
-                tokens.push_back(string());
             }
             else if (single_tokens.find(c) != single_tokens.end())
             {
@@ -259,14 +219,15 @@ namespace jc
             }
             else
             {
-                std::cerr << "Erro lexico: caractere invalido '"
-                          << c << "' na linha " << line
-                          << ", coluna " << col << "\n";
+                errors.push_back(std::format("[ERRO LÉXICO] Caractere inválido '{}' na linha {}, coluna {}.\n", c, line, col));
                 advance();
             }
         }
 
         tokens.push_back({TokenType::END_OF_FILE, "", line, col});
+        if (!errors.empty())
+            return errors;
+
         return tokens;
     }
 

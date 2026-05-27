@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <variant>
 #include "token.hpp"
 #include "symbol_table.hpp"
 #include "types.hpp"
@@ -69,16 +70,6 @@ namespace jc
     Token number();
 
     /**
-     * \brief Parses a string literal token.
-     *
-     * Reads characters enclosed in quotes and constructs
-     * a string token.
-     *
-     * @return Token representing a string literal.
-     */
-    Token string();
-
-    /**
      * \brief Parses operators and delimiters.
      *
      * Handles single and multi-character operators as well as
@@ -114,7 +105,7 @@ namespace jc
      *
      * @return Vector containing all tokens extracted from the input.
      */
-    std::vector<Token> tokenize();
+    std::variant<std::vector<Token>, std::vector<std::string>> tokenize();
 
     /**
      * \brief Transfers ownership of the symbol table.

@@ -188,7 +188,7 @@ bool parser::Parser::complete(std::vector<StateSet> &chart, const State &state, 
       continue;
 
     const std::optional<GSymbol> sym = s.next_symbol();
-    if (sym.has_value() && sym->type == SymbolType::NON_TERMINAL && sym->value == (u8)state.lhs) // state avança se o próximo símbolo for o mesmo que completou por último em outro chart
+    if (sym.has_value() && sym->type == SymbolType::NON_TERMINAL && sym->value == (u8)state.lhs)
     {
       State new_state = State(s.lhs, s.rhs, s.dot + 1, s.start);
       if (chart.at(it).insert(new_state).second)
@@ -227,8 +227,6 @@ static T map_token(const Token &t)
       return T::OUT;
     if (t.value == "println")
       return T::PRINTLN;
-    return T::ID;
-  case TokenType::STRING:
     return T::ID;
   case TokenType::DELIMITER:
     if (t.value == ";")

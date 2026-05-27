@@ -38,7 +38,19 @@ int main(int argc, char *argv[])
 
   Lexer *lexer = new Lexer(clean_code);
 
-  std::vector<Token> tokens = lexer->tokenize();
+  auto lexer_result = lexer->tokenize();
+
+  if (std::holds_alternative<std::vector<std::string>>(lexer_result))
+  {
+    auto &errors = std::get<std::vector<std::string>>(lexer_result);
+    for (const auto &error : errors)
+    {
+      std::cerr << error;
+    }
+    return EXIT_FAILURE;
+  }
+
+  std::vector<Token> tokens = std::get<std::vector<Token>>(lexer_result);
   SymbolTable symbols = lexer->move_symbols();
 
   delete lexer;
