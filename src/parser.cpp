@@ -6,26 +6,25 @@
 #include "parser.hpp"
 #include "utils.hpp"
 
-using namespace jc;
+using namespace jc::parser;
 static T map_token(const Token &t);
 
-bool parser::State::is_complete() const
+bool State::is_complete() const
 {
   return dot >= rhs->size;
 }
 
-const std::optional<grammar::GSymbol> parser::State::next_symbol() const
+const std::optional<grammar::GSymbol> State::next_symbol() const
 {
   return dot < rhs->size ? std::make_optional<GSymbol>(rhs->data[dot])
                          : std::nullopt;
 }
 
-bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
+bool Parser::earley_parse(const std::vector<Token> &&tokens)
 {
   u64 n = tokens.size();
   std::vector<StateSet> chart(n + 1);
   GProduction def = grammar::grammar.at(0).rhs.at(0);
-  // initial state
   chart.at(0).insert(State(grammar::start_symbol,
                            &def, (u8)0, (u8)0));
 
@@ -38,7 +37,6 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
     do
     {
       added = false;
-      // copy current set to safely iterate while modifying
       StateSet current_set = chart.at(i);
       for (const State &state : current_set)
       {
@@ -78,7 +76,7 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
         auto sym = s.next_symbol();
         if (sym.has_value() && sym->type == SymbolType::TERMINAL)
         {
-          expected_msg += sym->to_string() + " "; //  std::to_string(sym->value) + " ";
+          expected_msg += sym->to_string() + " ";
         }
       }
 
@@ -133,7 +131,7 @@ bool parser::Parser::earley_parse(const std::vector<Token> &&tokens)
   return this->has_ended(chart, n);
 }
 
-bool parser::Parser::predict(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 i)
+bool Parser::predict(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 it)
 {
   bool added = false;
   i8 idx = grammar::contains_key(symbol);
@@ -142,8 +140,8 @@ bool parser::Parser::predict(std::vector<StateSet> &chart, const State &state, c
 
   for (const auto &prod : this->grammar->at(idx).rhs)
   {
-    State new_state(static_cast<NT>(symbol.value), &prod, 0, i);
-    if (chart.at(i).insert(new_state).second)
+    State new_state(static_cast<NT>(symbol.value), &prod, 0, it);
+    if (chart.at(it).insert(new_state).second)
     {
       log::debug("      - Predict: " + new_state.to_string());
       added = true;
@@ -152,7 +150,7 @@ bool parser::Parser::predict(std::vector<StateSet> &chart, const State &state, c
   return added;
 }
 
-bool parser::Parser::scan(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 it, const std::vector<Token> &tokens)
+bool Parser::scan(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 it, const std::vector<Token> &tokens)
 {
   if (symbol.type == SymbolType::LAMBDA)
   {
@@ -176,7 +174,7 @@ bool parser::Parser::scan(std::vector<StateSet> &chart, const State &state, cons
   return false;
 }
 
-bool parser::Parser::complete(std::vector<StateSet> &chart, const State &state, u64 it)
+bool Parser::complete(std::vector<StateSet> &chart, const State &state, u64 it)
 {
   bool added = false;
   log::debug("    - State completo, retornado aos states da iteração " + std::to_string(state.start));
@@ -201,8 +199,9 @@ bool parser::Parser::complete(std::vector<StateSet> &chart, const State &state, 
   return added;
 }
 
-bool parser::Parser::has_ended(const std::vector<StateSet> &chart, u64 last)
+bool Parser::has_ended(const std::vector<StateSet> &chart, u64 last)
 {
+  log::debug("Verificação do último estado do Parser.");
   for (const auto &s : chart.at(last))
   {
     log::debug(s.to_string() + "\n");

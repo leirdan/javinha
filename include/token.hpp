@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <format>
 #include "types.hpp"
 
 namespace jc
@@ -15,7 +16,7 @@ namespace jc
         UNKNOWN
     };
 
-    inline std::string to_string(TokenType t)
+    inline std::string token_to_string(TokenType t)
     {
         switch (t)
         {
@@ -44,7 +45,7 @@ namespace jc
 
         std::string to_string() const
         {
-            return "(" + value + ", " + jc::to_string(type) + ")";
+            return std::format("({}, {})", value, jc::token_to_string(type));
         }
     };
 }

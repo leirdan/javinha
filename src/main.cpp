@@ -63,11 +63,10 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  // imprimir tokens
   o_stream << "TOKENS:\n";
   for (const auto &t : tokens)
   {
-    o_stream << "(" << to_string(t.type) << ", " << t.value
+    o_stream << "(" << token_to_string(t.type) << ", " << t.value
              << ") [linha " << t.line << "]\n";
   }
 
@@ -82,7 +81,7 @@ int main(int argc, char *argv[])
 
   o_stream.close();
 
-  std::cout << "Analise lexica concluida com sucesso.\n";
+  std::cout << "Analise léxica concluida com sucesso.\n";
 
   jc::parser::Parser parser(std::move(symbols));
   bool res = parser.earley_parse(std::move(tokens));
