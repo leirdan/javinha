@@ -2,7 +2,7 @@
 
 Start -> Prog 'EOF'
 Prog -> MainC DefCl
-MainC -> ‘ class ’ Id ‘{ ’ ‘ public ’ ‘ static ’ ‘ void ’ ‘ main ’ ‘( ’ ‘ String ’ ‘[ ’ ‘] ’ Id ‘) ’ ‘{ ’ Cmd ‘} ’ ‘} ’
+MainC -> ‘ class ’ Id ‘{ ’ ‘ public ’ ‘ static ’ ‘ void ’ ‘ main ’ ‘( ’ ‘ String ’ ‘[ ’ ‘] ’ Id ‘) ’ ‘{ ’ ListCmd ‘} ’ ‘} ’
 DefCl -> ‘ class ’ Id ‘{ ’ DefVar DefMet ‘} ’ DefCl
 | ‘ class ’ Id ‘ extends ’ Id ‘{ ’ DefVar DefMet ‘} ’ DefCl
 | λ

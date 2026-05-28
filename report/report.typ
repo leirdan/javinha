@@ -26,7 +26,7 @@
   align(center)[
     Universidade Federal do Rio Grande do Norte \
     Departamento de Matemática e Informática Aplicada \
-    Compiladores \
+    DIM0164 - Compiladores \
     Andriel Vinicius de Medeiros Fernandes, Jeremias Pinheiro de Araújo Andrade, Lucas Vinicius Dantas de Medeiros, Maria Paz Marcato
   ]
 )
