@@ -252,7 +252,6 @@ namespace jc
 
                                      GRule{.rhs = {GProduction{GSymbol::N(NT::EXP), GSymbol::T(T::COMMA), GSymbol::N(NT::LISTEXP)}, GProduction{GSymbol::N(NT::EXP)}, GProduction{GSymbol::L()}}, .lhs = NT::LISTEXP}}};
 
-    // retorna o índice
     static i8 contains_key(const GSymbol &sym)
     {
       if (sym.type != SymbolType::NON_TERMINAL)
@@ -279,6 +278,7 @@ namespace jc
       case SymbolType::TERMINAL:
         return "TERMINAL";
       }
+      return "UNKNOWN";
     }
 
     const static std::string symbol_to_string(NT nt)
@@ -332,8 +332,9 @@ namespace jc
       case NT::LISTEXP:
         return "LISTEXP";
       default:
-        return "UNKNOWN_NT";
+        break;
       }
+      return "UNKNOWN_NT";
     }
 
     const static std::string symbol_to_string(T t)
@@ -421,8 +422,9 @@ namespace jc
       case T::END:
         return "EOF";
       default:
-        return "UNKNOWN_T";
+        break;
       }
+      return "UNKNOWN_T";
     }
   } // namespace grammar
 } // namespace jc

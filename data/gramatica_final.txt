@@ -1,21 +1,21 @@
 [GLC - Javinha but it's completely different but still Javinha]
 
-Start → Prog 'EOF'
-Prog → MainC DefCl
-MainC → ‘ class ’ Id ‘{ ’ ‘ public ’ ‘ static ’ ‘ void ’ ‘ main ’ ‘( ’ ‘ String ’ ‘[ ’ ‘] ’ Id ‘) ’ ‘{ ’ Cmd ‘} ’ ‘} ’
-DefCl → ‘ class ’ Id ‘{ ’ DefVar DefMet ‘} ’ DefCl
+Start -> Prog 'EOF'
+Prog -> MainC DefCl
+MainC -> ‘ class ’ Id ‘{ ’ ‘ public ’ ‘ static ’ ‘ void ’ ‘ main ’ ‘( ’ ‘ String ’ ‘[ ’ ‘] ’ Id ‘) ’ ‘{ ’ Cmd ‘} ’ ‘} ’
+DefCl -> ‘ class ’ Id ‘{ ’ DefVar DefMet ‘} ’ DefCl
 | ‘ class ’ Id ‘ extends ’ Id ‘{ ’ DefVar DefMet ‘} ’ DefCl
 | λ
-DefVar → Type Id ‘; ’ DefVar
+DefVar -> Type Id ‘; ’ DefVar
 | λ
-DefMet → ‘ public ’ Type Id ‘( ’ Args ‘) ’ ‘{ ’ DefVar ListCmd ‘ return ’ Exp ‘; ’ ‘} ’ DefMet
+DefMet -> ‘ public ’ Type Id ‘( ’ Args ‘) ’ ‘{ ’ DefVar ListCmd ‘ return ’ Exp ‘; ’ ‘} ’ DefMet
 | ‘ public ’ Type Id ‘( ’ ‘) ’ ‘{ ’ DefVar ListCmd ‘ return ’ Exp ‘; ’ ‘} ’ DefMet
 | λ
-Type → ‘int ’ ‘[ ’ ‘] ’
+Type -> ‘int ’ ‘[ ’ ‘] ’
 | ‘ boolean ’
 | ‘int ’
 | Id
-Args → Type Id
+Args -> Type Id
 | Type Id ‘,’ Args
 ListCmd -> Cmd ListCmd | λ
 Cmd -> ‘{ ’ ListCmd ‘} ’
@@ -49,11 +49,11 @@ ObjAtom -> 'new' Id '(' ')'
 | Id
 | Number
 | 'this'
-ListExp → Exp ‘,’ ListExp
+ListExp -> Exp ‘,’ ListExp
 | Exp
 | λ
-Id → Char Word
+Id -> Char Word
 | Char
-Char → ‘a ’ | · · · | ‘z ’ | ‘A ’ | · · · | ‘Z ’
-Word → ‘_ ’ | Char Word | Number Word | Char | Number
-Number → ‘0 ’ | ‘1 ’ | · · · | ‘9 ’
+Char -> ‘a ’ | · · · | ‘z ’ | ‘A ’ | · · · | ‘Z ’
+Word -> ‘_ ’ | Char Word | Number Word | Char | Number
+Number -> ‘0 ’ | ‘1 ’ | · · · | ‘9 ’
