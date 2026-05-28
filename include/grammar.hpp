@@ -210,7 +210,7 @@ namespace jc
 
                                      GRule{.rhs = {GProduction{GSymbol::N(NT::MAINC), GSymbol::N(NT::DEFCL)}}, .lhs = NT::PROG},
 
-                                     GRule{.rhs = {GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::T(T::PUBLIC), GSymbol::T(T::STATIC), GSymbol::T(T::VOID), GSymbol::T(T::MAIN), GSymbol::T(T::LPAR), GSymbol::T(T::STRING), GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET), GSymbol::T(T::ID), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::CMD), GSymbol::T(T::RBRACE), GSymbol::T(T::RBRACE)}}, .lhs = NT::MAINC},
+                                     GRule{.rhs = {GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::T(T::PUBLIC), GSymbol::T(T::STATIC), GSymbol::T(T::VOID), GSymbol::T(T::MAIN), GSymbol::T(T::LPAR), GSymbol::T(T::STRING), GSymbol::T(T::LBRACKET), GSymbol::T(T::RBRACKET), GSymbol::T(T::ID), GSymbol::T(T::RPAR), GSymbol::T(T::LBRACE), GSymbol::N(NT::LISTCMD), GSymbol::T(T::RBRACE), GSymbol::T(T::RBRACE)}}, .lhs = NT::MAINC},
 
                                      GRule{.rhs = {GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::DEFMET), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFCL)}, GProduction{GSymbol::T(T::CLASS), GSymbol::T(T::ID), GSymbol::T(T::EXTENDS), GSymbol::T(T::ID), GSymbol::T(T::LBRACE), GSymbol::N(NT::DEFVAR), GSymbol::N(NT::DEFMET), GSymbol::T(T::RBRACE), GSymbol::N(NT::DEFCL)}, GProduction{GSymbol::L()}}, .lhs = NT::DEFCL},
 
