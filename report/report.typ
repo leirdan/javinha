@@ -1,3 +1,8 @@
+#import "grammar.typ": grammar
+#import "preprocessor.typ": preprocessor
+#import "lexer.typ": lexer
+#import "parser.typ": parser
+
 #set document(title: [Especificações do Compilador "Javinha"])
 
 #set text(font: "New Computer Modern", size: 12pt)
@@ -30,9 +35,13 @@
 #title()
 
 = Gramática
+#grammar()
 
 = Pré-Processador
+#preprocessor()
 
 = Análise Léxica
+#lexer()
 
 = Análise Sintática
+#parser()
