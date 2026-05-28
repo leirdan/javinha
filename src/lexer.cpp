@@ -1,11 +1,11 @@
-#include "lexer.hpp"
-#include "types.hpp"
 #include <cctype>
 #include <format>
 #include <unordered_map>
 #include <iostream>
 #include <array>
 #include <variant>
+#include "lexer.hpp"
+#include "types.hpp"
 
 namespace jc
 {
@@ -33,6 +33,7 @@ namespace jc
         {'=', TokenType::OPERATOR},
         {'!', TokenType::OPERATOR},
         {'>', TokenType::OPERATOR},
+        {'&', TokenType::OPERATOR},
         {';', TokenType::DELIMITER},
         {',', TokenType::DELIMITER},
         {'.', TokenType::DELIMITER},

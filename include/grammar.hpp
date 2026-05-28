@@ -40,10 +40,6 @@ namespace jc
       OBJMET,
       OBJATOM,
       LISTEXP,
-      ID,
-      CHAR,
-      WORD,
-      NUMBER
     };
 
     enum class T : u8
@@ -335,14 +331,6 @@ namespace jc
         return "OBJMET";
       case NT::LISTEXP:
         return "LISTEXP";
-      case NT::ID:
-        return "ID";
-      case NT::CHAR:
-        return "CHAR";
-      case NT::WORD:
-        return "WORD";
-      case NT::NUMBER:
-        return "NUMBER";
       default:
         return "UNKNOWN_NT";
       }

@@ -102,7 +102,6 @@ namespace jc
       bool has_ended(const std::vector<StateSet> &chart, u64 last);
 
     public:
-      // Parser(std::vector<Token> &&tokens, const SymbolTable &symbols) : tokens(std::move(tokens)), symbols(symbol_table) {};
       Parser(const SymbolTable &&symbols) : symbols(symbols) {};
 
       bool earley_parse(const std::vector<Token> &&tokens);
