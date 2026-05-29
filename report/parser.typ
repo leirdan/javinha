@@ -38,16 +38,15 @@
     - Detecção de erros: se `chart[i+1]` estiver vazio após processar `chart[i]`, um erro sintático é detectado e o mecanismo de recuperação é ativado.
     - Resultado: ao final, chama `has_ended()` para verificar se a análise  foi bem sucedida.
 
-    == Predição:
+    === Predição:
 
     A função `predict` implementa a operação
     de Predição. Dado um estado cujo próximo símbolo esperado é
-    um não-terminal symbol, ela busca todas as produções desse
-    não-terminal na gramática e insere novos itens em `chart[it]` com
-    o ponto no início. Esse mecanismo permite que o parser calcule previamente quais estruturas gramaticais podem aparecer na
+    um símbolo não-terminal, ela busca todas as produções desse
+    não-terminal na gramática e insere novos itens em `chart[it]` com o ponto no início. Esse mecanismo permite que o parser calcule previamente quais estruturas gramaticais podem aparecer na
     posição atual.
 
-    == Varredura
+    === Varredura
 
     A função `scan` implementa a operação de Varredura. Ela compara
     o próximo símbolo esperado pelo estado com o token na posição `it`
@@ -56,7 +55,7 @@
     `chart[it+1]`. Também é tratado o caso especial de produções
     `lambda`, onde o ponto avança sem consumir nenhum token.
 
-    == Completação
+    === Completação
 
     A função `complete` implementa a operação de Completação. Quando
     um item está completo (ponto ao final da produção), ela volta
@@ -65,7 +64,7 @@
     um desses itens, cria uma versão com o ponto avançado e insere
     em `chart[it]`.
 
-    == Verificação de aceite
+    === Verificação de aceite
 
     A função `has_ended` verifica se a análise foi bem-sucedida. Ela
     percorre `chart[n]`, que é a última coluna, em busca de um estado
@@ -73,14 +72,14 @@
     igual a 0. Isso significa que a gramática reconheceu toda a
     sequência de tokens a partir do início.
 
-    == Mapeamento de tokens
+    === Mapeamento de tokens
 
     A função estática `map_token` converte os tokens do analisador
     léxico para o tipo T, que é o terminal da gramática. Ela realiza
     um mapeamento exaustivo cobrindo todos os tipos de tokens
-    reconhecidos pela linguagem alvo.
+    reconhecidos pela linguagem alvo. Tal função foi elaborada pois o Analisador Léxico gera tokens de forma "isolada" sem considerar o contexto dos símbolos gramaticais.
 
-    == Mecanismo de recuperação de erros
+    === Mecanismo de recuperação de erros
 
     No parser, o erro é detectado quando, após processar completamente o
     `chart[i]`, o conjunto `chart[i+1]` permanece vazio. Isso indica que
@@ -88,8 +87,7 @@
     `tolens[i]`. Nesse momento, o parser registra o erro com informações sobre a posição, o token inesperado e os terminais que eram
     esperados.
 
-    A estratégia adotada é baseada na técnica de recuperação por pânico,
-    clássica na teoria de compiladores. O algoritmo funciona da seguinte
+    A estratégia adotada é baseada na técnica de recuperação por pânico. O algoritmo funciona da seguinte
     maneira:
     - Avança na entrada procurando um token de sincronização: ponto e  vírgula, chave de fechamento ou colchete de fechamento.
     - Para cada candidato $k$ encontrado, retrocede no chart procurando uma coluna anterior c onde algum estado estivesse esperando esse exato token de sincronização.

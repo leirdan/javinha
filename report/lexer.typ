@@ -18,13 +18,13 @@
       columns: (auto, 1fr),
       stroke: 0.5pt,
       [*Categoria*], [*Descrição*],
-      [`KEYWORD`],    [Palavra reservada da linguagem.],
+      [`KEYWORD`], [Palavra reservada da linguagem.],
       [`IDENTIFIER`], [Nome definido pelo programador.],
-      [`NUMBER`],     [Literal numérico inteiro ou decimal.],
-      [`OPERATOR`],   [Operador aritmético, relacional ou lógico.],
-      [`DELIMITER`],  [Símbolo de pontuação ou delimitação de bloco.],
-      [`END_OF_FILE`],[Marcador sintético inserido ao fim da tokenização.],
-      [`UNKNOWN`],    [Caractere não reconhecido pela gramática léxica.],
+      [`NUMBER`], [Literal numérico inteiro ou decimal.],
+      [`OPERATOR`], [Operador aritmético, relacional ou lógico.],
+      [`DELIMITER`], [Símbolo de pontuação ou delimitação de bloco.],
+      [`END_OF_FILE`], [Marcador sintético inserido ao fim da tokenização.],
+      [`UNKNOWN`], [Caractere não reconhecido.],
     )
 
     == Palavras Reservadas
@@ -47,17 +47,17 @@
       columns: (auto, auto, 1fr),
       stroke: 0.5pt,
       [*Símbolo*], [*Categoria*], [*Descrição*],
-      [`+` `-` `*` `=` `!` `>` `&`], [`OPERATOR`],  [Operadores aritméticos, relacionais e lógicos.],
-      [`&&`],                         [`OPERATOR`],  [Operador lógico AND (dois caracteres).],
-      [`;` `,` `.`],                  [`DELIMITER`], [Separadores de instrução, argumento e acesso a membro.],
-      [`(` `)` `{` `}` `[` `]`],     [`DELIMITER`], [Delimitadores de bloco, parâmetro e índice.],
+      [`+` `-` `*` `=` `!` `>` `&`], [`OPERATOR`], [Operadores aritméticos, relacionais e lógicos.],
+      [`&&`], [`OPERATOR`], [Operador lógico AND (dois caracteres).],
+      [`;` `,` `.`], [`DELIMITER`], [Separadores de instrução, argumento e acesso a membro.],
+      [`(` `)` `{` `}` `[` `]`], [`DELIMITER`], [Delimitadores de bloco, parâmetro e índice.],
     )
 
     == Funcionamento Interno
 
     A classe `Lexer` mantém o estado da varredura em três campos: `pos` (posição atual no buffer),
     `line` e `col` (linha e coluna para diagnósticos). A tokenização é coordenada pelo método
-    `tokenize()`, cujo laço principal classifica cada caractere e delega a um dos três métodos especializados:
+    `tokenize()`, cujo laço principal classifica cada caractere e delega a um dos três métodos especializados abaixo. Vale notar que a implementação utilizada para todos estes métodos consiste em um autômato finito determinístico.
 
     === Identificadores e Palavras Reservadas
 
