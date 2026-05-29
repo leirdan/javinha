@@ -1,6 +1,8 @@
 
 #let grammar() = {
-  [A gramática original foi adaptada para a seguinte estrutura:]
+  [
+    == Gramática Final
+    A gramática original foi adaptada para a seguinte estrutura:]
   ```bnf
   Start    -> Prog 'EOF'
   Prog     -> MainC DefCl
@@ -59,8 +61,26 @@
   ```
 
   [As principais mudanças consistiram em:
-    - Inclusão de um novo símbolo inicial *Start*: tal símbolo foi criado pois consideramos "EOF" como um token e deixamos *Prog* intacta;
+    - Inclusão de um novo símbolo inicial *Start*: tal símbolo foi criado o símbolo "EOF" é interpretado como um token e foi feita a decisão de deixar a variável *Prog* intacta;
     - Inclusão de novo não-terminal *ListCmd*: tal mudança foi feita para permitir o reconhecimento de múltiplos comandos em métodos e blocos de código;
     - Adição de precedência de operadores: foram criados novos não-terminais organizados de modo a permitir precedência correta dos operadores lógicos, aritméticos, de negação e de acesso a objetos.
+  ]
+  [
+    == Representação em Código
+    A representação da gramática no código foi feita com a criação das seguintes estruturas:
+
+    #table(
+      columns: (auto, 0.2fr, 1fr),
+      stroke: 0.5pt,
+      [*Nome*], [*Tipo*], [*Descrição*],
+      [SymbolType], [Enum], [Tipos dos símbolos gramaticais: Não-terminal, terminal ou lambda],
+      [NT], [Enum], [Associa cada não-terminal da gramática a um inteiro],
+      [T], [Enum], [Associa cada terminal da gramática a um inteiro],
+      [GSymbol], [Struct], [Representa, de fato, um símbolo de acordo com seu tipo e valor numérico],
+      [GProduction], [Struct], [Representa 1 produção da gramática, formada por uma sequência de até 24 GSymbols],
+      [GRule], [Struct], [Representa todo o conjunto de produções para um não-terminal],
+    )
+
+    Além disso, foram criadas funções auxiliares `symbol_to_string` e `type_to_string` para uso no debug, convertendo cada um dos enums mencionados em Strings.
   ]
 }

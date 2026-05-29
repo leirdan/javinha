@@ -2,6 +2,7 @@
 #import "preprocessor.typ": preprocessor
 #import "lexer.typ": lexer
 #import "parser.typ": parser
+#import "howto.typ": howto
 
 #set document(title: [Especificações do Compilador "Javinha"])
 
@@ -45,3 +46,11 @@
 
 = Análise Sintática
 #parser()
+
+= Como executar
+#howto()
+
+= Links úteis
+Para se aprofundar no Algoritmo de Earley é recomendado o consumo dos seguintes materiais:
+- "Earley Parsing Algorithm" - https://www.youtube.com/watch?v=WNKw1tiskSM (Fornece uma base satisfatória);
+- "Earley Parser Explained" - https://loup-vaillant.fr/tutorials/earley-parsing/ (O site mais completo encontrado sobre o assunto);

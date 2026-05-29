@@ -26,9 +26,5 @@
     - Quebras de linha são sempre preservadas no resultado.
     - Caracteres visíveis (não-espaço, não-controle) são copiados diretamente.
     - Espaços e caracteres de controle são descartados, com uma exceção: se o último caractere já inserido no resultado *e* o próximo caractere a ser lido forem ambos alfanuméricos, um espaço é inserido entre eles para evitar a fusão indevida de tokens.
-
-    Por exemplo, a entrada `class     A  { private     int [] b  }` produz a saída `class A{private int[]b}`.
-    O espaço entre `class` e `A` é mantido porque separa dois identificadores; já os espaços entre `int` e `[]`
-    são eliminados pois `[` não é alfanumérico.
   ]
 }
