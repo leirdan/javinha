@@ -44,6 +44,7 @@ namespace jc
       // Index where the dot is located inside production
       u8 dot;
 
+      State() : rhs(nullptr) {}
       State(NT lhs, const GProduction *rhs, u8 dot, u64 start) : rhs(rhs), start(start), lhs(lhs), dot(dot) {}
 
       /**
