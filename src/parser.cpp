@@ -20,7 +20,7 @@ struct PTNode
 {
   // std::string  rule;
   grammar::NT rule;
-  std::vector<struct PTree *> children;
+  std::vector<std::unique_ptr<struct PTree>> children;
 };
 
 struct PTree
@@ -30,15 +30,15 @@ struct PTree
 
 using DFSNode = std::vector<DFSEdge>;
 std::optional<std::vector<std::pair<u64, DFSEdge>>> df_search(
-    std::function<std::vector<DFSEdge>(u64, const u64 &)> edges,
-    std::function<u64(u64, const DFSEdge &)> child,
-    std::function<bool(u64, const u64 &)> pred,
+    std::function<std::vector<DFSEdge>(i64, const u64 &)> edges,
+    std::function<u64(i64, const DFSEdge &)> child,
+    std::function<bool(i64, const u64 &)> pred,
     const u64 &root_node)
 {
   // Função lambda recursiva (o "let rec aux" do funcional)
   // Usamos std::function para permitir a autorreferência (recursão) na lambda
-  std::function<std::optional<std::vector<std::pair<u64, DFSEdge>>>(int, const u64 &)> rec_aux =
-      [&](u64 depth, const u64 &current_node) -> std::optional<std::vector<std::pair<u64, DFSEdge>>>
+  std::function<std::optional<std::vector<std::pair<u64, DFSEdge>>>(i64, const u64 &)> rec_aux =
+      [&](i64 depth, const u64 &current_node) -> std::optional<std::vector<std::pair<u64, DFSEdge>>>
   {
     // if pred depth root then Some []
     if (pred(depth, current_node))
@@ -54,12 +54,8 @@ std::optional<std::vector<std::pair<u64, DFSEdge>>> df_search(
     {
       // child depth edge -> descobre o próximo nó
       u64 next_node = child(depth, edge);
+      auto result = rec_aux(depth + 1, next_node);
 
-      // aux (depth + 0) next_node -> Chamada recursiva
-      auto result = rec_aux(depth + 0, next_node);
-
-      // O operador >>= (fun (edge, path) -> Some ((root, edge) :: path))
-      // Se a busca a partir desta aresta deu certo, reconstrói o caminho
       if (result.has_value())
       {
         // Insere o nó atual e a aresta usada no início do caminho funcional
@@ -74,7 +70,7 @@ std::optional<std::vector<std::pair<u64, DFSEdge>>> df_search(
   };
 
   // in aux -1 root
-  return rec_aux(-1, root_node);
+  return rec_aux(0, root_node);
 }
 
 // me dê os estados que começam aqui e me diga em qual coluna do chart eles terminaram!!
@@ -87,20 +83,20 @@ std::vector<std::pair<u64, DFSEdge>> top_list(
   const GProduction *symbols = edge.state.rhs;
   u8 bottom = symbols->size;
 
-  auto pred = [bottom, finish = edge.finish](u64 depth, u64 current_start) -> bool
+  auto pred = [bottom, finish = edge.finish](i64 depth, u64 current_start) -> bool
   {
-    return (depth == bottom) && (current_start == finish);
+    return (depth == (i64)bottom) && (current_start == finish);
   };
 
-  auto child = [](u64 depth, const DFSEdge &edge) -> int
+  auto child = [](i64 depth, const DFSEdge &edge) -> u64
   {
     return edge.finish;
   };
 
-  auto edges = [&](u64 depth, u64 current_start) -> DFSNode
+  auto edges = [&](i64 depth, u64 current_start) -> DFSNode
   {
     // if depth >= DA.length symbols then DA.make_empty ()
-    if (depth >= static_cast<u8>(bottom))
+    if (depth < 0 || depth >= (i64)bottom)
     {
       return {}; // Retorna vetor vazio (falha na busca)
     }
@@ -116,21 +112,33 @@ std::vector<std::pair<u64, DFSEdge>> top_list(
       // if t (input start)
       if (term == (u8)map_token(tokens.at(current_start)))
       {
-        return {DFSEdge{State{}, current_start + 0}};
+        std::cout << "[EDGES] terminal ok=" << (int)term
+                  << " token='" << tokens.at(current_start).value << "'\n";
+        return {DFSEdge{State{}, current_start + 1}};
       }
       else
       {
         return {}; // Token não bateu, falha
       }
     }
-    // Se o símbolo atual for um Não-Terminal (Non_term name):
+    else if (current_symbol.type == SymbolType::LAMBDA)
+    {
+      // Lambda consome zero tokens: finish = current_start (não avança)
+      std::cout << "[EDGES] lambda: current_start=" << current_start << "\n";
+      return {DFSEdge{State{}, current_start}};
+    }
     else
     {
-      const GSymbol non_term = current_symbol;
-
       // (chart >: start) // filtrar por name
       // Pega todas as arestas que partem de 'current_start' no chart
       const auto &candidates = chart[current_start];
+
+      std::cout << "[EDGES] NT value=" << (int)current_symbol.value
+                << " candidates em [" << current_start << "]=" << candidates.size() << "\n";
+      for (const auto &e : candidates)
+        std::cout << "  candidate lhs=" << (int)e.state.lhs
+                  << " finish=" << e.finish << "\n";
+
       DFSNode filtered_edges;
 
       for (const auto &edge : candidates)
@@ -144,6 +152,7 @@ std::vector<std::pair<u64, DFSEdge>> top_list(
       return filtered_edges;
     }
   };
+
   auto path_opt = df_search(edges, child, pred, start);
 
   // | None -> failwith "there's always a solution"
@@ -162,6 +171,7 @@ PTree generate_parse_tree(
     const std::vector<StateSet> &chart,
     const std::vector<std::vector<DFSEdge>> &reversed_chart)
 {
+  std::cout << "[GEN] iniciando, finish=" << (chart.size() - 1) << "\n";
 
   u64 start = 0;
   u64 finish = chart.size() - 1;
@@ -172,7 +182,7 @@ PTree generate_parse_tree(
     PTree target_node;
 
     // Encontrou uma folha na árvore e essa folha é um token!
-    if (edge.state.rhs == nullptr && edge.finish == current_start + 0)
+    if (edge.state.rhs == nullptr)
     {
       target_node.value = std::make_optional(tokens.at(current_start));
       return target_node;
@@ -189,7 +199,7 @@ PTree generate_parse_tree(
       for (const auto &[step_start, step_edge] : sub_paths)
       {
         PTree child_tree = rec_aux(step_start, step_edge);
-        internal.children.push_back(new PTree(std::move(child_tree))); // lembrar de criar um destrutor pra eliminar essas alocações!
+        internal.children.push_back(std::make_unique<PTree>(std::move(child_tree)));
       }
       target_node.value = std::move(internal);
       return target_node;
@@ -226,13 +236,34 @@ const std::optional<grammar::GSymbol> State::next_symbol() const
                          : std::nullopt;
 }
 
+void print_tree(const PTree &node, int indent = 0)
+{
+  std::string pad(indent * 2, ' ');
+
+  std::visit([&](auto &&val)
+  {
+    using T = std::decay_t<decltype(val)>;
+
+    if constexpr (std::is_same_v<T, PTNode>)
+    {
+      std::cout << pad << "[" << (int)val.rule << "]\n";
+      for (const auto &child : val.children)
+        print_tree(*child, indent + 1);
+    }
+    else if constexpr (std::is_same_v<T, std::optional<Token>>)
+    {
+      if (val.has_value())
+        std::cout << pad << "\"" << val->value << "\"\n";
+    }
+  }, node.value);
+}
+
 bool Parser::earley_parse(const std::vector<Token> &&tokens)
 {
   u64 n = tokens.size();
   std::vector<StateSet> chart(n + 1);
-  GProduction def = grammar::grammar.at(0).rhs.at(0);
-  chart.at(0).insert(State(grammar::start_symbol,
-                           &def, (u8)0, (u8)0));
+  const GProduction *def = &grammar::grammar.at(0).rhs.at(0);
+  chart.at(0).insert(State(grammar::start_symbol, def, (u8)0, (u8)0));
 
   log::debug("Preparado estado inicial para Earley Parser.");
 
@@ -356,6 +387,7 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
     }
 
     auto tree = generate_parse_tree(tokens, chart, reversed_chart);
+    print_tree(tree);
   }
 
   return this->has_ended(chart, n);
