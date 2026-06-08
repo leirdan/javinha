@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include "parser.hpp"
 #include "utils.hpp"
+#include <memory>
 
 using namespace jc::parser;
 static T map_token(const Token &t);
@@ -112,7 +113,7 @@ std::vector<std::pair<u64, DFSEdge>> top_list(
       // if t (input start)
       if (term == (u8)map_token(tokens.at(current_start)))
       {
-        std::cout << "[EDGES] terminal ok=" << (int)term
+        std::cout << "[EDGES] terminal ok=" << symbol_to_string((T)term)
                   << " token='" << tokens.at(current_start).value << "'\n";
         return {DFSEdge{State{}, current_start + 1}};
       }
@@ -133,10 +134,10 @@ std::vector<std::pair<u64, DFSEdge>> top_list(
       // Pega todas as arestas que partem de 'current_start' no chart
       const auto &candidates = chart[current_start];
 
-      std::cout << "[EDGES] NT value=" << (int)current_symbol.value
+      std::cout << "[EDGES] NT value=" << symbol_to_string((NT)current_symbol.value)
                 << " candidates em [" << current_start << "]=" << candidates.size() << "\n";
       for (const auto &e : candidates)
-        std::cout << "  candidate lhs=" << (int)e.state.lhs
+        std::cout << "  candidate lhs=" << symbol_to_string(e.state.lhs)
                   << " finish=" << e.finish << "\n";
 
       DFSNode filtered_edges;
@@ -146,6 +147,7 @@ std::vector<std::pair<u64, DFSEdge>> top_list(
         // Basta checar se o símbolo do estado bate com o que a gramática espera
         if ((u8)edge.state.lhs == current_symbol.value)
         {
+          std::cout << "símbolo aceito: " << symbol_to_string(edge.state.lhs) << "\n";
           filtered_edges.push_back(edge); // Ele já vai com o .finish preenchido lá do loop!
         }
       }
@@ -167,7 +169,6 @@ std::vector<std::pair<u64, DFSEdge>> top_list(
 
 PTree generate_parse_tree(
     const std::vector<Token> &tokens,
-    // const std::vector<std::vector<DFSEdge>>& chart,
     const std::vector<StateSet> &chart,
     const std::vector<std::vector<DFSEdge>> &reversed_chart)
 {
@@ -182,10 +183,18 @@ PTree generate_parse_tree(
     PTree target_node;
 
     // Encontrou uma folha na árvore e essa folha é um token!
-    if (edge.state.rhs == nullptr)
+    if (edge.state.rhs == nullptr) // não pega os lambdas
     {
-      target_node.value = std::make_optional(tokens.at(current_start));
-      return target_node;
+      if (edge.finish > current_start)
+      {
+        target_node.value = std::make_optional(tokens.at(current_start));
+        return target_node;
+      }
+      else
+      {
+        target_node.value = std::nullopt; // std::make_optional<Token>(std::nullopt);
+        return target_node;
+      }
     }
     else
     {
@@ -241,12 +250,12 @@ void print_tree(const PTree &node, int indent = 0)
   std::string pad(indent * 2, ' ');
 
   std::visit([&](auto &&val)
-  {
+             {
     using T = std::decay_t<decltype(val)>;
 
     if constexpr (std::is_same_v<T, PTNode>)
     {
-      std::cout << pad << "[" << (int)val.rule << "]\n";
+      std::cout << pad << "[" << symbol_to_string(val.rule) << "]\n";
       for (const auto &child : val.children)
         print_tree(*child, indent + 1);
     }
@@ -254,8 +263,7 @@ void print_tree(const PTree &node, int indent = 0)
     {
       if (val.has_value())
         std::cout << pad << "\"" << val->value << "\"\n";
-    }
-  }, node.value);
+    } }, node.value);
 }
 
 bool Parser::earley_parse(const std::vector<Token> &&tokens)
@@ -381,7 +389,6 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
         DFSEdge edge;
         edge.state = state;
         edge.finish = i;
-        // new_state.start = i;
         reversed_chart[src].push_back(edge);
       }
     }
