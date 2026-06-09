@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+#include <memory>
 #include <functional>
 #include <unordered_set>
 #include <vector>
@@ -96,6 +97,25 @@ namespace jc
 
     using StateSet = std::unordered_set<State, StateHash>;
 
+    struct DFSEdge
+    {
+      State state;
+      u64 finish;
+    };
+
+    struct PTNode
+    {
+      grammar::NT rule;
+      std::vector<std::unique_ptr<struct PTree>> children;
+    };
+
+    struct PTree
+    {
+      std::variant<std::optional<Token>, PTNode> value;
+    };
+
+    using DFSNode = std::vector<DFSEdge>;
+
     /**
      * \brief Parser responsible for recognizing and validating the source code
      *
@@ -172,6 +192,28 @@ namespace jc
        */
       [[nodiscard]]
       bool has_ended(const std::vector<StateSet> &chart, u64 last);
+
+      [[nodiscard]]
+      std::optional<std::vector<std::pair<u64, DFSEdge>>> dfs(
+          std::function<std::vector<DFSEdge>(i64, const u64 &)> edges,
+          std::function<u64(i64, const DFSEdge &)> child,
+          std::function<bool(i64, const u64 &)> pred,
+          const u64 &root_node);
+
+      [[nodiscard]]
+      std::vector<std::pair<u64, DFSEdge>> top_list(
+          const std::vector<Token> &tokens,
+          const std::vector<DFSNode> &chart,
+          const DFSEdge &edge,
+          u64 start);
+
+      [[nodiscard]]
+      PTree parse_tree(
+          const std::vector<Token> &tokens,
+          const std::vector<StateSet> &chart,
+          const std::vector<std::vector<DFSEdge>> &reversed_chart);
+
+      void print_tree(const PTree &node, int indent = 0);
 
     public:
       Parser(const SymbolTable &&symbols) : symbols(symbols) {};
