@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include "parser.hpp"
 #include "utils.hpp"
+#include "ast.hpp"
 
 using namespace jc::parser;
 static T map_token(const Token &t);
@@ -150,6 +151,9 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
 
     auto tree = parse_tree(tokens, chart, reversed_chart);
     print_tree(tree);
+    auto ast = ast::AST();
+    ast.create(tree);
+    // log::ast(ast.create(tree));
   }
 
   return this->has_ended(chart, n);
