@@ -66,13 +66,13 @@ namespace jc
     {
       Kind kind;
       virtual ~Node() = default;
-      virtual void print() = 0;
+      virtual void print(std::string prefix = "", bool is_last = true) const = 0;
 
     protected:
       explicit Node(Kind k) : kind(k) {}
     };
 
-    using NodePtr = Node *;
+    using NodePtr = std::unique_ptr<Node>;
 
     struct TypeNode : Node
     {
@@ -83,9 +83,9 @@ namespace jc
       TypeNode(TypeKind tk, std::string name) : Node(Kind::TYPE)
       {
         kind = tk;
-        name = name;
+        this->name = name;
       }
-      void print() override {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     // Estrutura do programa
@@ -97,19 +97,18 @@ namespace jc
       std::vector<NodePtr> fields;
       std::vector<NodePtr> methods;
       ClassNode() : Node(Kind::CLASS) {}
-      void print() override
+
+      void print(std::string prefix = "", bool is_last = true) const override
       {
-        std::cout << std::format("\t[ClassNode {} | Parent: {}]\n", name, parent.value_or("None"));
-        // std::cout << std::format("\t[ClassNode Fields]\n");
-        for (auto &field : fields)
-        {
-          if (field)
-            field->print();
+        std::cout << prefix << (is_last ? "└── " : "├── ") << "ClassNode [" << name << " extends " << parent.value_or("None") << "]\n";
+        std::string next_prefix = prefix + (is_last ? "    " : "│   ");
+        for (size_t i = 0; i < fields.size(); ++i) {
+          bool child_is_last = (i == fields.size() - 1) && methods.empty();
+          fields[i]->print(next_prefix, child_is_last);
         }
-        for (auto &method : methods)
-        {
-          if (method)
-            method->print();
+        for (size_t i = 0; i < methods.size(); ++i) {
+          bool child_is_last = (i == methods.size() - 1);
+          methods[i]->print(next_prefix, child_is_last);
         }
       }
     };
@@ -120,48 +119,41 @@ namespace jc
       std::string args_param;
       NodePtr body;
       MainClassNode() : Node(Kind::MAIN_CLASS) {}
-      void print() override
+      void print(std::string prefix = "", bool is_last = true) const override
       {
-        std::cout << std::format("\t[MainClassNode {}]\n", name);
-        body->print();
+        std::cout << prefix << (is_last ? "└── " : "├── ") << "MainClassNode [" << name << "]\n";
+        if (body) {
+          body->print(prefix + (is_last ? "    " : "│   "), true);
+        }
       }
     };
 
     struct ParamNode : Node
     {
-      TypeNode type;
+      NodePtr type;
       std::string name;
       ParamNode() : Node(Kind::PARAM) {}
-      ParamNode(NodePtr type, std::string &&name) : Node(Kind::PARAM)
+      ParamNode(NodePtr type, std::string name) : Node(Kind::PARAM), type(std::move(type)), name(std::move(name)) {}
+      void print(std::string prefix = "", bool is_last = true) const override
       {
-        type = static_cast<TypeNode *>(type);
-        name = name;
-      }
-      void print() override
-      {
-        std::cout << std::format("[ParamNode {} | Type: {}]\n", name, type.name);
+        std::cout << prefix << (is_last ? "└── " : "├── ") << "ParamNode [" << name << "]\n";
       }
     };
 
     struct MethodNode : Node
     {
-      TypeNode return_type;
+      NodePtr return_type;
       std::string name;
       std::vector<ParamNode *> params;
       std::vector<NodePtr> locals;
       NodePtr body;
       NodePtr return_expr;
+
       MethodNode() : Node(Kind::METHOD) {}
-      MethodNode(NodePtr r, std::string n, std::vector<ParamNode*> &&p, std::vector<NodePtr> &&l, NodePtr b, NodePtr re) : Node(Kind::METHOD)
-      {
-        return_type = *(static_cast<TypeNode *>(r));
-        name = n;
-        params = p;
-        locals = l;
-        body = b;
-        return_expr = re;
-      }
-      void print() override
+
+      MethodNode(NodePtr r, std::string n, std::vector<ParamNode*> p, std::vector<NodePtr> l, NodePtr b, NodePtr re): Node(Kind::METHOD), return_type(std::move(r)), name(std::move(n)), params(std::move(p)), locals(std::move(l)), body(std::move(b)), return_expr(std::move(re)) {}
+
+      void print(std::string prefix = "", bool is_last = true) const override
       {
         // TODO
       }
@@ -172,28 +164,28 @@ namespace jc
       NodePtr main_class;
       std::vector<NodePtr> classes;
       ProgramNode() : Node(Kind::PROGRAM) {}
-      void print() override
+
+      void print(std::string prefix = "", bool is_last = true) const override
       {
-        std::cout << "[ProgramNode]\n";
-        main_class->print();
-        for (auto &cl : classes)
-        {
-          cl->print();
+        std::cout << prefix << (is_last ? "└── " : "├── ") << "ProgramNode\n";
+        std::string next_prefix = prefix + (is_last ? "    " : "│   ");
+        if (main_class) {
+          main_class->print(next_prefix, classes.empty());
+        }
+        for (size_t i = 0; i < classes.size(); ++i) {
+          bool child_is_last = (i == classes.size() - 1);
+          classes[i]->print(next_prefix, child_is_last);
         }
       }
     };
 
     struct VarDeclNode : Node
     {
-      TypeNode type;
+      NodePtr type;
       std::string name;
       VarDeclNode() : Node(Kind::VAR_DECL) {}
-      VarDeclNode(TypeNode type, std::string name) : Node(Kind::VAR_DECL)
-      {
-        type = type;
-        name = name;
-      }
-      void print() override
+      VarDeclNode(NodePtr type, std::string name) : Node(Kind::VAR_DECL), type(std::move(type)), name(std::move(name)) {}
+      void print(std::string prefix = "", bool is_last = true) const override
       {
         // TODO
       }
@@ -207,8 +199,9 @@ namespace jc
       NodePtr index;
       NodePtr value;
       ArrayAssignNode() : Node(Kind::ARRAY_ASSIGN) {}
-      ArrayAssignNode(std::string name, NodePtr index, NodePtr value) : Node(Kind::ARRAY_ASSIGN), name(name), index(index), value(value) {}
-      void print() override
+      ArrayAssignNode(std::string name, NodePtr index, NodePtr value)
+          : Node(Kind::ARRAY_ASSIGN), name(std::move(name)), index(std::move(index)), value(std::move(value)) {}
+      void print(std::string prefix = "", bool is_last = true) const override
       {
         // TODO
       }
@@ -219,16 +212,16 @@ namespace jc
       std::string name;
       NodePtr value;
       AssignNode() : Node(Kind::ASSIGN) {}
-      AssignNode(std::string name, NodePtr value) : Node(Kind::ASSIGN), name(name), value(value) {}
-      void print() override {}
+      AssignNode(std::string name, NodePtr value) : Node(Kind::ASSIGN), name(std::move(name)), value(std::move(value)) {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct BlockNode : Node
     {
       std::vector<NodePtr> stmt;
       BlockNode() : Node(Kind::BLOCK) {}
-      BlockNode(std::vector<NodePtr> &&stmt) : Node(Kind::BLOCK), stmt(stmt) {}
-      void print() override
+      BlockNode(std::vector<NodePtr> stmt) : Node(Kind::BLOCK), stmt(std::move(stmt)) {}
+      void print(std::string prefix = "", bool is_last = true) const override
       {
         // TODO
       }
@@ -240,12 +233,9 @@ namespace jc
       NodePtr then_branch;
       NodePtr else_branch;
       IfNode() : Node(Kind::IF) {}
-      IfNode(NodePtr cond, NodePtr then, NodePtr else_b) : Node(Kind::IF), cond(cond)
-      {
-        then_branch = then;
-        else_branch = else_b;
-      }
-      void print() override
+      IfNode(NodePtr cond, NodePtr then, NodePtr else_b)
+          : Node(Kind::IF), cond(std::move(cond)), then_branch(std::move(then)), else_branch(std::move(else_b)) {}
+      void print(std::string prefix = "", bool is_last = true) const override
       {
         // TODO
       }
@@ -255,8 +245,8 @@ namespace jc
     {
       NodePtr expr;
       PrintNode() : Node(Kind::PRINT) {}
-      PrintNode(NodePtr expr) : Node(Kind::PRINT), expr(expr) {}
-      void print() override
+      PrintNode(NodePtr expr) : Node(Kind::PRINT), expr(std::move(expr)) {}
+      void print(std::string prefix = "", bool is_last = true) const override
       {
         // TODO
       }
@@ -267,9 +257,8 @@ namespace jc
       NodePtr cond;
       NodePtr body;
       WhileNode() : Node(Kind::WHILE) {}
-      WhileNode(NodePtr cond, NodePtr body) : Node(Kind::WHILE), cond(cond), body(body) {}
-      void print() override
-      {
+      WhileNode(NodePtr cond, NodePtr body) : Node(Kind::WHILE), cond(std::move(cond)), body(std::move(body)) {}
+      void print(std::string prefix = "", bool is_last = true) const override {
         // TODO
       }
     };
@@ -281,8 +270,8 @@ namespace jc
       NodePtr array;
       NodePtr index;
       ArrayAccessNode() : Node(Kind::ARRAY_ACCESS) {}
-      ArrayAccessNode(NodePtr array, NodePtr index) : Node(Kind::ARRAY_ACCESS), array(array), index(index) {}
-      void print() override {}
+      ArrayAccessNode(NodePtr array, NodePtr index) : Node(Kind::ARRAY_ACCESS), array(std::move(array)), index(std::move(index)) {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct BinOpNode : Node
@@ -290,31 +279,45 @@ namespace jc
       BinOp op;
       NodePtr left;
       NodePtr right;
-      BinOpNode() : Node(Kind::BIN_OP) {}
-      BinOpNode(BinOp op, NodePtr left, NodePtr right) : Node(Kind::BIN_OP), left(left), right(right), op(op) {}
-      void print() override {}
+      BinOpNode(BinOp op, NodePtr left, NodePtr right): Node(Kind::BIN_OP), op(op), left(std::move(left)), right(std::move(right)) {}
+
+      void print(std::string prefix = "", bool is_last = true) const override
+      {
+        std::string op_str = (op == BinOp::ADD) ? "+" :
+                             (op == BinOp::SUB) ? "-" :
+                             (op == BinOp::MULS) ? "*" :
+                             (op == BinOp::AND) ? "&&" :
+                             (op == BinOp::GT) ? ">" : "?";
+
+        std::cout << prefix << (is_last ? "└── " : "├── ") << "BinOpNode [" << op_str << "]\n";
+
+        std::string next_prefix = prefix + (is_last ? "    " : "│   ");
+
+        if (left) left->print(next_prefix, false);
+        if (right) right->print(next_prefix, true);
+      }
     };
 
     struct BoolNode : Node
     {
       bool value;
       explicit BoolNode(bool v) : Node(Kind::BOOL), value(v) {}
-      void print() override {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct IdentifierNode : Node
     {
       std::string name;
       explicit IdentifierNode(std::string n) : Node(Kind::IDENTIFIER), name(std::move(n)) {}
-      void print() override {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct LengthNode : Node
     {
       NodePtr obj;
       LengthNode() : Node(Kind::LENGTH) {}
-      LengthNode(NodePtr obj) : Node(Kind::LENGTH), obj(obj) {}
-      void print() override {}
+      LengthNode(NodePtr obj) : Node(Kind::LENGTH), obj(std::move(obj)) {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct MethodCallNode : Node
@@ -323,45 +326,45 @@ namespace jc
       std::string method;
       std::vector<NodePtr> args;
       MethodCallNode() : Node(Kind::METHOD_CALL) {}
-      MethodCallNode(NodePtr obj, std::string method, std::vector<NodePtr> &&args) : Node(Kind::METHOD_CALL), obj(obj), method(method), args(args) {}
-      void print() override {}
+      MethodCallNode(NodePtr obj, std::string method, std::vector<NodePtr> args) : Node(Kind::METHOD_CALL), obj(std::move(obj)), method(std::move(method)), args(std::move(args)) {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct NewArrayNode : Node
     {
       NodePtr size;
       NewArrayNode() : Node(Kind::NEW_ARRAY) {}
-      NewArrayNode(NodePtr size) : Node(Kind::NEW_ARRAY), size(size) {}
-      void print() override {}
+      NewArrayNode(NodePtr size) : Node(Kind::NEW_ARRAY), size(std::move(size)) {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct NewObjectNode : Node
     {
       std::string class_name;
       NewObjectNode() : Node(Kind::NEW_OBJECT) {}
-      NewObjectNode(std::string class_name) : Node(Kind::NEW_OBJECT), class_name(class_name) {}
-      void print() override {}
+      NewObjectNode(std::string class_name) : Node(Kind::NEW_OBJECT), class_name(std::move(class_name)) {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct NotNode : Node
     {
       NodePtr expr;
       NotNode() : Node(Kind::NOT) {}
-      NotNode(NodePtr expr) : Node(Kind::NOT), expr(expr) {}
-      void print() override {}
+      NotNode(NodePtr expr) : Node(Kind::NOT), expr(std::move(expr)) {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct NumberNode : Node
     {
       i32 value;
       NumberNode(i32 v) : Node(Kind::NUMBER), value(v) {}
-      void print() override {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     struct ThisNode : Node
     {
       ThisNode() : Node(Kind::THIS) {}
-      void print() override {}
+      void print(std::string prefix = "", bool is_last = true) const override {}
     };
 
     using namespace jc::parser;
