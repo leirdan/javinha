@@ -118,6 +118,9 @@ std::vector<NodePtr> AST::def_cl(const PTNode &root)
     return classes;
   }
 
+  if (root.children.empty() || !has_any_member(root.children))
+    return classes;
+
   bool search_for_inheritance = false;
   NodePtr class_node_ptr = std::make_unique<ClassNode>();
   ClassNode *class_raw = static_cast<ClassNode *>(class_node_ptr.get());
