@@ -5,21 +5,6 @@
 using namespace jc::ast;
 using namespace jc::grammar;
 
-std::string jc::ast::type_kind_to_string(TypeKind tk)
-{
-  switch (tk)
-  {
-  case TypeKind::BOOLEAN:
-    return "boolean";
-  case TypeKind::INT:
-    return "int";
-  case TypeKind::INT_ARRAY:
-    return "int[]";
-  default:
-    return "";
-  }
-}
-
 NodePtr AST::create(const PTree &root)
 {
   if (std::holds_alternative<std::optional<Token>>(root.value))
@@ -41,7 +26,7 @@ NodePtr AST::prog(const PTNode &root)
 {
   if (root.rule != NT::PROG)
   {
-    log::debug(std::format("esperava prog, recebeu {}", symbol_to_string(root.rule)));
+    log::debug(std::format("esperava prog, recebeu {}", jc::to_string(root.rule)));
     return nullptr;
   }
 
@@ -53,7 +38,7 @@ NodePtr AST::prog(const PTNode &root)
     if (std::holds_alternative<PTNode>(ptr->value))
     {
       const auto &child = std::get<PTNode>(ptr->value);
-      log::debug(std::format("filho: {}", symbol_to_string(child.rule)));
+      log::debug(std::format("filho: {}", jc::to_string(child.rule)));
       if (child.rule == NT::MAINC)
       {
         prog_raw->main_class = main_c(child);
@@ -64,7 +49,7 @@ NodePtr AST::prog(const PTNode &root)
       }
       else
       {
-        log::debug(std::format("Prog não deveria ter nenhum estado diferente...: {}", symbol_to_string(child.rule)));
+        log::debug(std::format("Prog não deveria ter nenhum estado diferente...: {}", jc::to_string(child.rule)));
       }
     }
   }
@@ -78,7 +63,7 @@ NodePtr AST::main_c(const PTNode &root)
 {
   if (root.rule != NT::MAINC)
   {
-    log::debug(std::format("esperava main_c, recebeu {}", symbol_to_string(root.rule)));
+    log::debug(std::format("esperava main_c, recebeu {}", jc::to_string(root.rule)));
     return nullptr;
   }
 
@@ -131,7 +116,7 @@ std::vector<NodePtr> AST::def_cl(const PTNode &root)
   std::vector<NodePtr> classes;
   if (root.rule != NT::DEFCL)
   {
-    log::debug(std::format("esperava def_cl, recebeu {}", symbol_to_string(root.rule)));
+    log::debug(std::format("esperava def_cl, recebeu {}", jc::to_string(root.rule)));
     return classes;
   }
 

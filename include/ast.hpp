@@ -7,6 +7,7 @@
 #include <vector>
 #include "types.hpp"
 #include "parser.hpp"
+#include "utils.hpp"
 
 namespace jc
 {
@@ -54,7 +55,7 @@ namespace jc
       INT_ARRAY,
     };
 
-    std::string type_kind_to_string(TypeKind tk);
+    // std::string type_kind_to_string(TypeKind tk);
 
     enum class BinOp : u8
     {
@@ -96,7 +97,7 @@ namespace jc
         }
         else
         {
-          std::cout << tabs << (is_last ? "└── " : "├── ") << "Type [" << jc::ast::type_kind_to_string(kind) << "]\n";
+          std::cout << tabs << (is_last ? "└── " : "├── ") << "Type [" << jc::to_string(kind) << "]\n";
         }
       }
     };

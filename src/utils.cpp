@@ -1,69 +1,194 @@
 #include <iostream>
 #include "utils.hpp"
 #include "ast.hpp"
+#include "grammar.hpp"
 
-using namespace jc;
-using namespace jc::ast;
-
-void log::debug(const std::string &msg)
+void jc::log::debug(const std::string &msg)
 {
   // #ifdef DEBUG
   std::cout << "[DEBUG] " << msg << "\n";
   // #endif
 }
 
-void log::ast(const NodePtr &node)
+void jc::log::ast(const jc::ast::NodePtr &node)
 {
   // #ifdef AST
-  auto *prog = static_cast<ProgramNode *>(node.get());
+  auto *prog = static_cast<jc::ast::ProgramNode *>(node.get());
   prog->print();
-  // node->print();
-  // print_ast_rec(node, 0);
   // #endif
 }
 
-void log::print_ast_rec(const NodePtr &node, u8 depth)
+std::string jc::to_string(const jc::ast::TypeKind tk)
 {
-  std::string tabs = std::string(depth * 2, ' ');
-  if (node == nullptr)
+  switch (tk)
   {
-    std::cout << tabs << "[Null]\n";
-    return;
+  case jc::ast::TypeKind::BOOLEAN:
+    return "boolean";
+  case jc::ast::TypeKind::INT:
+    return "int";
+  case jc::ast::TypeKind::INT_ARRAY:
+    return "int[]";
+  default:
+    return "";
   }
+}
 
-  switch (node->kind)
+std::string jc::to_string(const jc::grammar::SymbolType symbol)
+{
+  switch (symbol)
   {
-  case Kind::PROGRAM:
-  {
-    auto *prog = static_cast<ProgramNode *>(node.get());
-    std::cout << tabs << "[ProgramNode]\n";
-
-    print_ast_rec(prog->main_class, depth + 1);
-
-    for (const auto &cl : prog->classes)
-    {
-      print_ast_rec(cl, depth + 1);
-    }
-    break;
+  case SymbolType::LAMBDA:
+    return "LAMBDA";
+  case SymbolType::NON_TERMINAL:
+    return "NON TERMINAL";
+  case SymbolType::TERMINAL:
+    return "TERMINAL";
   }
+  return "UNKNOWN";
+}
 
-  case Kind::MAIN_CLASS:
+std::string jc::to_string(const jc::grammar::NT nt)
+{
+  switch (nt)
   {
-    auto *main = static_cast<MainClassNode *>(node.get());
-    // std::cout << tabs << std::format("[MainClassNode (name: {}, args: {})]\n", main->name, main->args_param);
-
-    // TODO: imprimir corpo
-    break;
-  }
-  case Kind::CLASS:
-  {
-    auto *cl = static_cast<ClassNode *>(node.get());
-    std::cout << tabs << std::format("[ClassNode (name: {}, parent: {})]\n", cl->name, cl->parent.value_or("none"));
-
-    // TODO: imprimir corpo
-    break;
-  }
+  case NT::START:
+    return "START";
+  case NT::PROG:
+    return "PROG";
+  case NT::MAINC:
+    return "MAINC";
+  case NT::DEFCL:
+    return "DEFCL";
+  case NT::DEFVAR:
+    return "DEFVAR";
+  case NT::DEFMET:
+    return "DEFMET";
+  case NT::TYPE:
+    return "TYPE";
+  case NT::ARGS:
+    return "ARGS";
+  case NT::LISTCMD:
+    return "LISTCMD";
+  case NT::CMD:
+    return "CMD";
+  case NT::EXP:
+    return "EXP";
+  case NT::EXP2:
+    return "EXP2";
+  case NT::GREATER:
+    return "GREATER";
+  case NT::GREATER2:
+    return "GREATER2";
+  case NT::ADD:
+    return "ADD";
+  case NT::ADD2:
+    return "ADD2";
+  case NT::MUL:
+    return "MUL";
+  case NT::MUL2:
+    return "MUL2";
+  case NT::NEG:
+    return "NEG";
+  case NT::OBJ:
+    return "OBJ";
+  case NT::OBJATOM:
+    return "OBJATOM";
+  case NT::OBJMET:
+    return "OBJMET";
+  case NT::LISTEXP:
+    return "LISTEXP";
   default:
     break;
   }
+  return "UNKNOWN_NT";
+}
+
+std::string jc::to_string(const jc::grammar::T t)
+{
+  switch (t)
+  {
+  case T::CLASS:
+    return "class";
+  case T::PUBLIC:
+    return "public";
+  case T::STATIC:
+    return "static";
+  case T::VOID:
+    return "void";
+  case T::MAIN:
+    return "main";
+  case T::STRING:
+    return "String";
+  case T::IF:
+    return "if";
+  case T::ELSE:
+    return "else";
+  case T::WHILE:
+    return "while";
+  case T::SYSTEM:
+    return "System";
+  case T::OUT:
+    return "out";
+  case T::PRINTLN:
+    return "println";
+  case T::RETURN:
+    return "return";
+  case T::EXTENDS:
+    return "extends";
+  case T::INT:
+    return "int";
+  case T::BOOLEAN:
+    return "boolean";
+  case T::TRUE:
+    return "true";
+  case T::FALSE:
+    return "false";
+  case T::THIS:
+    return "this";
+  case T::NEW:
+    return "new";
+  case T::PLUS:
+    return "+";
+  case T::MINUS:
+    return "-";
+  case T::MULT:
+    return "*";
+  case T::GT:
+    return ">";
+  case T::AND:
+    return "&&";
+  case T::NOT:
+    return "!";
+  case T::ASSIGN:
+    return "=";
+  case T::LPAR:
+    return "(";
+  case T::RPAR:
+    return ")";
+  case T::LBRACE:
+    return "{";
+  case T::RBRACE:
+    return "}";
+  case T::LBRACKET:
+    return "[";
+  case T::RBRACKET:
+    return "]";
+  case T::DOT:
+    return ".";
+  case T::COMMA:
+    return ",";
+  case T::SEMICOLON:
+    return ";";
+  case T::ID:
+    return "id";
+  case T::NUMBER:
+    return "number";
+  case T::LENGTH:
+    return "length";
+  case T::END:
+    return "EOF";
+  default:
+    break;
+  }
+  return "UNKNOWN_T";
 }
