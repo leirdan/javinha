@@ -154,6 +154,7 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
     print_tree(tree);
     auto ast = ast::AST();
     ast::NodePtr ptr = ast.create(tree);
+    log::ast(ptr);
   }
 
   return this->has_ended(chart, n);

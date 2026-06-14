@@ -55,8 +55,6 @@ namespace jc
       INT_ARRAY,
     };
 
-    // std::string type_kind_to_string(TypeKind tk);
-
     enum class BinOp : u8
     {
       ADD,

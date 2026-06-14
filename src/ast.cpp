@@ -54,8 +54,6 @@ NodePtr AST::prog(const PTNode &root)
     }
   }
 
-  program_ptr->print();
-
   return program_ptr;
 }
 
@@ -641,7 +639,7 @@ NodePtr AST::obj_met(const PTNode &root, NodePtr left)
     auto call_node = std::make_unique<MethodCallNode>(std::move(left), method_name, std::move(arguments));
 
     const auto &last_child = root.children.back();
-    if (std::holds_alternative<PTNode>(last_child->value) && std::get<PTNode>(last_child->value).rule == ::jc::grammar::NT::OBJMET)
+    if (std::holds_alternative<PTNode>(last_child->value) && std::get<PTNode>(last_child->value).rule == NT::OBJMET)
     {
       return obj_met(std::get<PTNode>(last_child->value), std::move(call_node));
     }
