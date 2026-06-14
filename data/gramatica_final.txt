@@ -19,7 +19,7 @@ Args -> Type Id
 | Type Id ‘,’ Args
 ListCmd -> Cmd ListCmd | λ
 Cmd -> ‘{ ’ ListCmd ‘} ’
-| ‘if ’ ‘( ’ Exp ‘) ’ Cmd else Cmd
+| ‘if ’ ‘( ’ Exp ‘) ’ Cmd 'else' Cmd
 | ‘ while ’ ‘( ’ Exp ‘) ’ Cmd
 | ‘ System ’ ‘. ’ ‘out ’ ‘. ’ ‘ println ’ ‘( ’ Exp ‘) ’ ‘; ’
 | Id ‘= ’ Exp ‘; ’
@@ -35,7 +35,7 @@ Mul2 -> '*' Neg Mul2 | λ
 Neg -> '!' Neg | Obj 
 Obj -> ObjAtom ObjMet
 ObjMet -> '.' 'length' ObjMet 
-| '.' Id '( ListExp ')' ObjMet
+| '.' Id '( 'ListExp ')' ObjMet
 | '[' Exp ']' ObjMet
 | λ
 ObjAtom -> 'new' Id '(' ')'

@@ -60,7 +60,7 @@ NodePtr AST::prog(const PTNode &root)
       }
       else if (child.rule == NT::DEFCL)
       {
-        prog_raw->classes.push_back(def_cl(child));
+        prog_raw->classes = std::move(def_cl(child));
       }
       else
       {
@@ -108,12 +108,10 @@ NodePtr AST::main_c(const PTNode &root)
 
         if (token.type == TokenType::IDENTIFIER)
         {
-          // O primeiro ID é o nome da Classe (ex: "Programa")
           if (main_raw->name.empty())
           {
             main_raw->name = token.value;
           }
-          // O segundo ID que aparecer no escopo do MAINC será o parâmetro do main (ex: "a")
           else if (main_param_name.empty() && token.value.compare("main") != 0)
           {
             main_param_name = token.value;
@@ -128,12 +126,13 @@ NodePtr AST::main_c(const PTNode &root)
   return main_class_ptr;
 }
 
-NodePtr AST::def_cl(const PTNode &root)
+std::vector<NodePtr> AST::def_cl(const PTNode &root)
 {
+  std::vector<NodePtr> classes;
   if (root.rule != NT::DEFCL)
   {
     log::debug(std::format("esperava def_cl, recebeu {}", symbol_to_string(root.rule)));
-    return nullptr;
+    return classes;
   }
 
   bool search_for_inheritance = false;
@@ -153,6 +152,12 @@ NodePtr AST::def_cl(const PTNode &root)
       {
         class_raw->methods = def_met(child);
       }
+      else if (child.rule == NT::DEFCL)
+      {
+        auto next = def_cl(child);
+        // classes.insert(classes.end(), std::move(next));
+        std::move(next.begin(), next.end(), std::back_inserter(classes));
+      }
     }
     else
     {
@@ -169,7 +174,7 @@ NodePtr AST::def_cl(const PTNode &root)
           class_raw->parent = std::make_optional(token.value);
           search_for_inheritance = false;
         }
-        else if (token.type == TokenType::KEYWORD && token.value == "EXTENDS" && !class_raw->parent.has_value())
+        else if (token.type == TokenType::KEYWORD && token.value == "extends" && !class_raw->parent.has_value())
         {
           search_for_inheritance = true;
         }
@@ -177,7 +182,8 @@ NodePtr AST::def_cl(const PTNode &root)
     }
   }
 
-  return class_node_ptr;
+  classes.insert(classes.begin(), std::move(class_node_ptr));
+  return classes;
 }
 
 std::vector<NodePtr> AST::def_var(const PTNode &root)
@@ -186,7 +192,7 @@ std::vector<NodePtr> AST::def_var(const PTNode &root)
 
   if (root.rule != NT::DEFVAR)
     return v;
-  if (root.children.empty())
+  else if (root.children.empty() || !has_any_member(root.children))
     return v;
 
   NodePtr current_type = nullptr;
@@ -367,7 +373,7 @@ std::vector<ParamNode *> AST::args(const PTNode &root)
 
   if (current_type != nullptr && !param_name.empty())
   {
-    // Cuidar com o vazamento aqui no futuro, já que ParamNode* é devolvido em um vector de ponteiros crus
+    // TODO: Cuidar com o vazamento aqui no futuro, já que ParamNode* é devolvido em um vector de ponteiros crus
     auto *param_node = new ParamNode(std::move(current_type), param_name);
     v.push_back(param_node);
   }

@@ -518,7 +518,7 @@ namespace jc
 
       NodePtr prog(const PTNode &root);
       NodePtr main_c(const PTNode &root);
-      NodePtr def_cl(const PTNode &root);
+      std::vector<NodePtr> def_cl(const PTNode &root);
       NodePtr cmd(const PTNode &root);
       NodePtr type(const PTNode &root);
       NodePtr list_cmd(const PTNode &root);
