@@ -5,6 +5,21 @@
 using namespace jc::ast;
 using namespace jc::grammar;
 
+std::string jc::ast::type_kind_to_string(TypeKind tk)
+{
+  switch (tk)
+  {
+  case TypeKind::BOOLEAN:
+    return "boolean";
+  case TypeKind::INT:
+    return "int";
+  case TypeKind::INT_ARRAY:
+    return "int[]";
+  default:
+    return "";
+  }
+}
+
 NodePtr AST::create(const PTree &root)
 {
   if (std::holds_alternative<std::optional<Token>>(root.value))
@@ -13,7 +28,7 @@ NodePtr AST::create(const PTree &root)
     return nullptr;
   }
   const PTNode &root_node = std::get<PTNode>(root.value);
-  if (root_node.children.size() == 1 && root_node.rule == start_symbol)
+  if (root_node.children.size() == 2 && root_node.rule == start_symbol)
   {
     auto &ptr = root_node.children.front();
     auto &prog_node = std::get<PTNode>(ptr->value);
@@ -31,7 +46,7 @@ NodePtr AST::prog(const PTNode &root)
   }
 
   NodePtr program_ptr = std::make_unique<ProgramNode>();
-  ProgramNode* prog_raw = static_cast<ProgramNode*>(program_ptr.get());
+  ProgramNode *prog_raw = static_cast<ProgramNode *>(program_ptr.get());
 
   for (const auto &ptr : root.children)
   {
@@ -68,35 +83,47 @@ NodePtr AST::main_c(const PTNode &root)
   }
 
   NodePtr main_class_ptr = std::make_unique<MainClassNode>();
-  MainClassNode* main_raw = static_cast<MainClassNode*>(main_class_ptr.get());
+  MainClassNode *main_raw = static_cast<MainClassNode *>(main_class_ptr.get());
+
+  std::string main_param_name = "";
+  NodePtr main_body = nullptr;
 
   for (const auto &ptr : root.children)
   {
     if (std::holds_alternative<PTNode>(ptr->value))
     {
       const auto &child = std::get<PTNode>(ptr->value);
+
       if (child.rule == NT::LISTCMD)
       {
-        main_raw->body = list_cmd(child);
+        main_body = list_cmd(child);
       }
     }
     else
     {
-      const auto &child = std::get<std::optional<Token>>(ptr->value);
-      if (child.has_value())
+      const auto &child_opt = std::get<std::optional<Token>>(ptr->value);
+      if (child_opt.has_value())
       {
-        const auto &token = child.value();
-        if (token.type == TokenType::IDENTIFIER && main_raw->name.empty())
+        const auto &token = child_opt.value();
+
+        if (token.type == TokenType::IDENTIFIER)
         {
-          main_raw->name = token.value;
-        }
-        else if (token.type == TokenType::IDENTIFIER && !main_raw->name.empty() && main_raw->args_param.empty())
-        {
-          main_raw->args_param = token.value;
+          // O primeiro ID é o nome da Classe (ex: "Programa")
+          if (main_raw->name.empty())
+          {
+            main_raw->name = token.value;
+          }
+          // O segundo ID que aparecer no escopo do MAINC será o parâmetro do main (ex: "a")
+          else if (main_param_name.empty() && token.value.compare("main") != 0)
+          {
+            main_param_name = token.value;
+          }
         }
       }
     }
   }
+
+  main_raw->main_method = std::make_unique<MainMethodNode>("main", main_param_name, "void", std::move(main_body));
 
   return main_class_ptr;
 }
@@ -111,7 +138,7 @@ NodePtr AST::def_cl(const PTNode &root)
 
   bool search_for_inheritance = false;
   NodePtr class_node_ptr = std::make_unique<ClassNode>();
-  ClassNode* class_raw = static_cast<ClassNode*>(class_node_ptr.get());
+  ClassNode *class_raw = static_cast<ClassNode *>(class_node_ptr.get());
 
   for (const auto &ptr : root.children)
   {
@@ -157,8 +184,10 @@ std::vector<NodePtr> AST::def_var(const PTNode &root)
 {
   std::vector<NodePtr> v;
 
-  if (root.rule != NT::DEFVAR) return v;
-  if (root.children.empty()) return v;
+  if (root.rule != NT::DEFVAR)
+    return v;
+  if (root.children.empty())
+    return v;
 
   NodePtr current_type = nullptr;
   std::string var_name = "";
@@ -169,8 +198,10 @@ std::vector<NodePtr> AST::def_var(const PTNode &root)
     if (std::holds_alternative<PTNode>(ptr->value))
     {
       const auto &child = std::get<PTNode>(ptr->value);
-      if (child.rule == NT::TYPE) current_type = type(child);
-      else if (child.rule == NT::DEFVAR) next_def_var = &child;
+      if (child.rule == NT::TYPE)
+        current_type = type(child);
+      else if (child.rule == NT::DEFVAR)
+        next_def_var = &child;
     }
     else
     {
@@ -178,7 +209,8 @@ std::vector<NodePtr> AST::def_var(const PTNode &root)
       if (token_opt.has_value())
       {
         auto token = token_opt.value();
-        if (token.type == TokenType::IDENTIFIER && var_name.empty()) var_name = token.value;
+        if (token.type == TokenType::IDENTIFIER && var_name.empty())
+          var_name = token.value;
       }
     }
   }
@@ -199,7 +231,8 @@ std::vector<NodePtr> AST::def_var(const PTNode &root)
 
 NodePtr AST::type(const PTNode &root)
 {
-  if (root.rule != NT::TYPE) return nullptr;
+  if (root.rule != NT::TYPE)
+    return nullptr;
 
   if (!root.children.empty())
   {
@@ -212,8 +245,10 @@ NodePtr AST::type(const PTNode &root)
         auto token = token_opt.value();
         if (token.type == TokenType::KEYWORD && token.value == "int")
         {
-          if (root.children.size() == 3) return std::make_unique<TypeNode>(TypeKind::INT_ARRAY);
-          else if (root.children.size() == 1) return std::make_unique<TypeNode>(TypeKind::INT);
+          if (root.children.size() == 3)
+            return std::make_unique<TypeNode>(TypeKind::INT_ARRAY);
+          else if (root.children.size() == 1)
+            return std::make_unique<TypeNode>(TypeKind::INT);
         }
         else if (token.type == TokenType::KEYWORD && token.value == "boolean")
         {
@@ -233,8 +268,10 @@ std::vector<NodePtr> AST::def_met(const PTNode &root)
 {
   std::vector<NodePtr> v;
 
-  if (root.rule != NT::DEFMET) return v;
-  if (root.children.empty()) return v;
+  if (root.rule != NT::DEFMET)
+    return v;
+  if (root.children.empty())
+    return v;
 
   NodePtr return_type = nullptr;
   std::string method_name = "";
@@ -249,12 +286,18 @@ std::vector<NodePtr> AST::def_met(const PTNode &root)
     if (std::holds_alternative<PTNode>(ptr->value))
     {
       const auto &child = std::get<PTNode>(ptr->value);
-      if (child.rule == NT::TYPE) return_type = type(child);
-      else if (child.rule == NT::ARGS) method_args = args(child);
-      else if (child.rule == NT::DEFVAR) local_vars = def_var(child);
-      else if (child.rule == NT::LISTCMD) body_cmds = list_cmd(child);
-      else if (child.rule == NT::EXP) return_expr = exp(child);
-      else if (child.rule == NT::DEFMET) next_def_met = &child;
+      if (child.rule == NT::TYPE)
+        return_type = type(child);
+      else if (child.rule == NT::ARGS)
+        method_args = args(child);
+      else if (child.rule == NT::DEFVAR)
+        local_vars = def_var(child);
+      else if (child.rule == NT::LISTCMD)
+        body_cmds = list_cmd(child);
+      else if (child.rule == NT::EXP)
+        return_expr = exp(child);
+      else if (child.rule == NT::DEFMET)
+        next_def_met = &child;
     }
     else
     {
@@ -262,7 +305,8 @@ std::vector<NodePtr> AST::def_met(const PTNode &root)
       if (token_opt.has_value())
       {
         auto token = token_opt.value();
-        if (token.type == TokenType::IDENTIFIER && method_name.empty()) method_name = token.value;
+        if (token.type == TokenType::IDENTIFIER && method_name.empty())
+          method_name = token.value;
       }
     }
   }
@@ -275,8 +319,7 @@ std::vector<NodePtr> AST::def_met(const PTNode &root)
         std::move(method_args),
         std::move(local_vars),
         std::move(body_cmds),
-        std::move(return_expr)
-    ));
+        std::move(return_expr)));
   }
 
   if (next_def_met != nullptr)
@@ -293,7 +336,8 @@ std::vector<ParamNode *> AST::args(const PTNode &root)
 {
   std::vector<ParamNode *> v;
 
-  if (root.rule != NT::ARGS) return v;
+  if (root.rule != NT::ARGS)
+    return v;
 
   NodePtr current_type = nullptr;
   std::string param_name = "";
@@ -304,8 +348,10 @@ std::vector<ParamNode *> AST::args(const PTNode &root)
     if (std::holds_alternative<PTNode>(ptr->value))
     {
       const auto &child = std::get<PTNode>(ptr->value);
-      if (child.rule == NT::TYPE) current_type = type(child);
-      else if (child.rule == NT::ARGS) next_args = &child;
+      if (child.rule == NT::TYPE)
+        current_type = type(child);
+      else if (child.rule == NT::ARGS)
+        next_args = &child;
     }
     else
     {
@@ -313,7 +359,8 @@ std::vector<ParamNode *> AST::args(const PTNode &root)
       if (token_opt.has_value())
       {
         auto token = token_opt.value();
-        if (token.type == TokenType::IDENTIFIER && param_name.empty()) param_name = token.value;
+        if (token.type == TokenType::IDENTIFIER && param_name.empty())
+          param_name = token.value;
       }
     }
   }
@@ -337,9 +384,11 @@ std::vector<ParamNode *> AST::args(const PTNode &root)
 
 NodePtr AST::list_cmd(const PTNode &root)
 {
-  if (root.rule != NT::LISTCMD) return nullptr;
+  if (root.rule != NT::LISTCMD)
+    return nullptr;
 
-  if (root.children.empty()) return std::make_unique<BlockNode>();
+  if (root.children.empty())
+    return std::make_unique<BlockNode>();
 
   std::vector<NodePtr> cmds;
   NodePtr current_cmd = nullptr;
@@ -350,12 +399,15 @@ NodePtr AST::list_cmd(const PTNode &root)
     if (std::holds_alternative<PTNode>(ptr->value))
     {
       const auto &child = std::get<PTNode>(ptr->value);
-      if (child.rule == NT::CMD) current_cmd = cmd(child);
-      else if (child.rule == NT::LISTCMD) next_list = &child;
+      if (child.rule == NT::CMD)
+        current_cmd = cmd(child);
+      else if (child.rule == NT::LISTCMD)
+        next_list = &child;
     }
   }
 
-  if (current_cmd != nullptr) cmds.push_back(std::move(current_cmd));
+  if (current_cmd != nullptr)
+    cmds.push_back(std::move(current_cmd));
 
   if (next_list != nullptr)
   {
@@ -373,7 +425,8 @@ NodePtr AST::list_cmd(const PTNode &root)
 
 NodePtr AST::cmd(const PTNode &root)
 {
-  if (root.rule != NT::CMD || root.children.empty()) return nullptr;
+  if (root.rule != NT::CMD || root.children.empty())
+    return nullptr;
 
   if (std::holds_alternative<std::optional<Token>>(root.children[0]->value))
   {
@@ -404,13 +457,17 @@ NodePtr AST::cmd(const PTNode &root)
       const auto &child = std::get<PTNode>(ptr->value);
       if (child.rule == NT::EXP)
       {
-        if (expr1 == nullptr) expr1 = exp(child);
-        else expr2 = exp(child);
+        if (expr1 == nullptr)
+          expr1 = exp(child);
+        else
+          expr2 = exp(child);
       }
       else if (child.rule == NT::CMD)
       {
-        if (sub_cmd1 == nullptr) sub_cmd1 = cmd(child);
-        else sub_cmd2 = cmd(child);
+        if (sub_cmd1 == nullptr)
+          sub_cmd1 = cmd(child);
+        else
+          sub_cmd2 = cmd(child);
       }
     }
     else
@@ -420,10 +477,14 @@ NodePtr AST::cmd(const PTNode &root)
       {
         const auto &token = token_opt.value();
 
-        if (token.value == "if") is_if = true;
-        else if (token.value == "while") is_while = true;
-        else if (token.value == "System") is_print = true;
-        else if (token.value == "[") is_array_assign = true;
+        if (token.value == "if")
+          is_if = true;
+        else if (token.value == "while")
+          is_while = true;
+        else if (token.value == "System")
+          is_print = true;
+        else if (token.value == "[")
+          is_array_assign = true;
         else if (token.type == TokenType::IDENTIFIER && identifier_name.empty())
         {
           identifier_name = token.value;
@@ -432,13 +493,18 @@ NodePtr AST::cmd(const PTNode &root)
     }
   }
 
-  if (is_if) return std::make_unique<IfNode>(std::move(expr1), std::move(sub_cmd1), std::move(sub_cmd2));
-  if (is_while) return std::make_unique<WhileNode>(std::move(expr1), std::move(sub_cmd1));
-  if (is_print) return std::make_unique<PrintNode>(std::move(expr1));
+  if (is_if)
+    return std::make_unique<IfNode>(std::move(expr1), std::move(sub_cmd1), std::move(sub_cmd2));
+  if (is_while)
+    return std::make_unique<WhileNode>(std::move(expr1), std::move(sub_cmd1));
+  if (is_print)
+    return std::make_unique<PrintNode>(std::move(expr1));
   if (!identifier_name.empty())
   {
-    if (is_array_assign) return std::make_unique<ArrayAssignNode>(identifier_name, std::move(expr1), std::move(expr2));
-    else return std::make_unique<AssignNode>(identifier_name, std::move(expr1));
+    if (is_array_assign)
+      return std::make_unique<ArrayAssignNode>(identifier_name, std::move(expr1), std::move(expr2));
+    else
+      return std::make_unique<AssignNode>(identifier_name, std::move(expr1));
   }
 
   return nullptr;
@@ -446,52 +512,61 @@ NodePtr AST::cmd(const PTNode &root)
 
 NodePtr AST::exp(const PTNode &root)
 {
-  if (root.rule != ::jc::grammar::NT::EXP) return nullptr;
+  if (root.rule != NT::EXP)
+    return nullptr;
 
   NodePtr left = greater(std::get<PTNode>(root.children[0]->value));
-  if (root.children.size() > 1) return exp2(std::get<PTNode>(root.children[1]->value), std::move(left));
+  if (root.children.size() > 1)
+    return exp2(std::get<PTNode>(root.children[1]->value), std::move(left));
   return left;
 }
 
 NodePtr AST::exp2(const PTNode &root, NodePtr left)
 {
-  if (root.children.empty()) return left;
+  if (root.children.empty() || !has_any_member(root.children))
+    return left;
 
   NodePtr right = greater(std::get<PTNode>(root.children[1]->value));
   auto bin_op = std::make_unique<BinOpNode>(BinOp::AND, std::move(left), std::move(right));
 
-  if (root.children.size() > 2) return exp2(std::get<PTNode>(root.children[2]->value), std::move(bin_op));
+  if (root.children.size() > 2)
+    return exp2(std::get<PTNode>(root.children[2]->value), std::move(bin_op));
   return bin_op;
 }
 
 NodePtr AST::greater(const PTNode &root)
 {
   NodePtr left = add(std::get<PTNode>(root.children[0]->value));
-  if (root.children.size() > 1) return greater2(std::get<PTNode>(root.children[1]->value), std::move(left));
+  if (root.children.size() > 1)
+    return greater2(std::get<PTNode>(root.children[1]->value), std::move(left));
   return left;
 }
 
 NodePtr AST::greater2(const PTNode &root, NodePtr left)
 {
-  if (root.children.empty()) return left;
+  if (root.children.empty() || !has_any_member(root.children))
+    return left;
 
   NodePtr right = add(std::get<PTNode>(root.children[1]->value));
   auto bin_op = std::make_unique<BinOpNode>(BinOp::GT, std::move(left), std::move(right));
 
-  if (root.children.size() > 2) return greater2(std::get<PTNode>(root.children[2]->value), std::move(bin_op));
+  if (root.children.size() > 2)
+    return greater2(std::get<PTNode>(root.children[2]->value), std::move(bin_op));
   return bin_op;
 }
 
 NodePtr AST::add(const PTNode &root)
 {
   NodePtr left = mul(std::get<PTNode>(root.children[0]->value));
-  if (root.children.size() > 1) return add2(std::get<PTNode>(root.children[1]->value), std::move(left));
+  if (root.children.size() > 1)
+    return add2(std::get<PTNode>(root.children[1]->value), std::move(left));
   return left;
 }
 
 NodePtr AST::add2(const PTNode &root, NodePtr left)
 {
-  if (root.children.empty()) return left;
+  if (root.children.empty() || !has_any_member(root.children))
+    return left;
 
   auto token = std::get<std::optional<Token>>(root.children[0]->value).value();
   BinOp op = (token.value == "+") ? BinOp::ADD : BinOp::SUB;
@@ -499,25 +574,29 @@ NodePtr AST::add2(const PTNode &root, NodePtr left)
   NodePtr right = mul(std::get<PTNode>(root.children[1]->value));
   auto bin_op = std::make_unique<BinOpNode>(op, std::move(left), std::move(right));
 
-  if (root.children.size() > 2) return add2(std::get<PTNode>(root.children[2]->value), std::move(bin_op));
+  if (root.children.size() > 2)
+    return add2(std::get<PTNode>(root.children[2]->value), std::move(bin_op));
   return bin_op;
 }
 
 NodePtr AST::mul(const PTNode &root)
 {
   NodePtr left = neg(std::get<PTNode>(root.children[0]->value));
-  if (root.children.size() > 1) return mul2(std::get<PTNode>(root.children[1]->value), std::move(left));
+  if (root.children.size() > 1)
+    return mul2(std::get<PTNode>(root.children[1]->value), std::move(left));
   return left;
 }
 
 NodePtr AST::mul2(const PTNode &root, NodePtr left)
 {
-  if (root.children.empty()) return left;
+  if (root.children.empty() || !has_any_member(root.children))
+    return left;
 
   NodePtr right = neg(std::get<PTNode>(root.children[1]->value));
   auto bin_op = std::make_unique<BinOpNode>(BinOp::MULS, std::move(left), std::move(right));
 
-  if (root.children.size() > 2) return mul2(std::get<PTNode>(root.children[2]->value), std::move(bin_op));
+  if (root.children.size() > 2)
+    return mul2(std::get<PTNode>(root.children[2]->value), std::move(bin_op));
   return bin_op;
 }
 
@@ -538,20 +617,23 @@ NodePtr AST::neg(const PTNode &root)
 NodePtr AST::obj(const PTNode &root)
 {
   NodePtr base = obj_atom(std::get<PTNode>(root.children[0]->value));
-  if (root.children.size() > 1) return obj_met(std::get<PTNode>(root.children[1]->value), std::move(base));
+  if (root.children.size() > 1)
+    return obj_met(std::get<PTNode>(root.children[1]->value), std::move(base));
   return base;
 }
 
 NodePtr AST::obj_met(const PTNode &root, NodePtr left)
 {
-  if (root.children.empty()) return left;
+  if (root.children.empty() || !has_any_member(root.children))
+    return left;
 
   auto first_token = std::get<std::optional<Token>>(root.children[0]->value).value();
 
   if (first_token.value == "." && std::get<std::optional<Token>>(root.children[1]->value)->value == "length")
   {
     auto length_node = std::make_unique<LengthNode>(std::move(left));
-    if (root.children.size() > 2) return obj_met(std::get<PTNode>(root.children[2]->value), std::move(length_node));
+    if (root.children.size() > 2)
+      return obj_met(std::get<PTNode>(root.children[2]->value), std::move(length_node));
     return length_node;
   }
 
@@ -580,7 +662,8 @@ NodePtr AST::obj_met(const PTNode &root, NodePtr left)
     NodePtr index_expr = exp(std::get<PTNode>(root.children[1]->value));
     auto array_lookup = std::make_unique<ArrayAccessNode>(std::move(left), std::move(index_expr));
 
-    if (root.children.size() > 3) return obj_met(std::get<PTNode>(root.children[3]->value), std::move(array_lookup));
+    if (root.children.size() > 3)
+      return obj_met(std::get<PTNode>(root.children[3]->value), std::move(array_lookup));
     return array_lookup;
   }
 
@@ -608,12 +691,18 @@ NodePtr AST::obj_atom(const PTNode &root)
         return std::make_unique<NewObjectNode>(second_token.value);
       }
     }
-    if (token.value == "(") return exp(std::get<PTNode>(root.children[1]->value));
-    if (token.value == "true") return std::make_unique<BoolNode>(true);
-    if (token.value == "false") return std::make_unique<BoolNode>(false);
-    if (token.value == "this") return std::make_unique<ThisNode>();
-    if (token.type == TokenType::IDENTIFIER) return std::make_unique<IdentifierNode>(token.value);
-    if (token.type == TokenType::NUMBER) return std::make_unique<NumberNode>(std::stoi(token.value));
+    if (token.value == "(")
+      return exp(std::get<PTNode>(root.children[1]->value));
+    if (token.value == "true")
+      return std::make_unique<BoolNode>(true);
+    if (token.value == "false")
+      return std::make_unique<BoolNode>(false);
+    if (token.value == "this")
+      return std::make_unique<ThisNode>();
+    if (token.type == TokenType::IDENTIFIER)
+      return std::make_unique<IdentifierNode>(token.value);
+    if (token.type == TokenType::NUMBER)
+      return std::make_unique<NumberNode>(std::stoi(token.value));
   }
 
   return nullptr;
@@ -622,7 +711,8 @@ NodePtr AST::obj_atom(const PTNode &root)
 std::vector<NodePtr> AST::list_exp(const PTNode &root)
 {
   std::vector<NodePtr> expressions;
-  if (root.children.empty()) return expressions;
+  if (root.children.empty())
+    return expressions;
 
   NodePtr current_expr = exp(std::get<PTNode>(root.children[0]->value));
   if (current_expr != nullptr)

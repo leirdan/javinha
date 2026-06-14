@@ -5,21 +5,24 @@
 using namespace jc;
 using namespace jc::ast;
 
-void log::debug(const std::string& msg)
+void log::debug(const std::string &msg)
 {
   // #ifdef DEBUG
   std::cout << "[DEBUG] " << msg << "\n";
   // #endif
 }
 
-void log::ast(const NodePtr& node)
+void log::ast(const NodePtr &node)
 {
   // #ifdef AST
-  print_ast_rec(node, 0);
+  auto *prog = static_cast<ProgramNode *>(node.get());
+  prog->print();
+  // node->print();
+  // print_ast_rec(node, 0);
   // #endif
 }
 
-void log::print_ast_rec(const NodePtr& node, u8 depth)
+void log::print_ast_rec(const NodePtr &node, u8 depth)
 {
   std::string tabs = std::string(depth * 2, ' ');
   if (node == nullptr)
@@ -30,37 +33,37 @@ void log::print_ast_rec(const NodePtr& node, u8 depth)
 
   switch (node->kind)
   {
-    case Kind::PROGRAM:
+  case Kind::PROGRAM:
+  {
+    auto *prog = static_cast<ProgramNode *>(node.get());
+    std::cout << tabs << "[ProgramNode]\n";
+
+    print_ast_rec(prog->main_class, depth + 1);
+
+    for (const auto &cl : prog->classes)
     {
-      auto *prog = static_cast<ProgramNode *>(node.get());
-      std::cout << tabs << "[ProgramNode]\n";
-
-      print_ast_rec(prog->main_class, depth + 1);
-
-      for (const auto& cl : prog->classes)
-      {
-        print_ast_rec(cl, depth + 1);
-      }
-      break;
+      print_ast_rec(cl, depth + 1);
     }
+    break;
+  }
 
-    case Kind::MAIN_CLASS:
-    {
-      auto *main = static_cast<MainClassNode *>(node.get());
-      std::cout << tabs << std::format("[MainClassNode (name: {}, args: {})]\n", main->name, main->args_param);
+  case Kind::MAIN_CLASS:
+  {
+    auto *main = static_cast<MainClassNode *>(node.get());
+    // std::cout << tabs << std::format("[MainClassNode (name: {}, args: {})]\n", main->name, main->args_param);
 
-      // TODO: imprimir corpo
-      break;
-    }
-    case Kind::CLASS:
-    {
-      auto *cl = static_cast<ClassNode *>(node.get());
-      std::cout << tabs << std::format("[ClassNode (name: {}, parent: {})]\n", cl->name, cl->parent.value_or("none"));
+    // TODO: imprimir corpo
+    break;
+  }
+  case Kind::CLASS:
+  {
+    auto *cl = static_cast<ClassNode *>(node.get());
+    std::cout << tabs << std::format("[ClassNode (name: {}, parent: {})]\n", cl->name, cl->parent.value_or("none"));
 
-      // TODO: imprimir corpo
-      break;
-    }
-    default:
-      break;
+    // TODO: imprimir corpo
+    break;
+  }
+  default:
+    break;
   }
 }

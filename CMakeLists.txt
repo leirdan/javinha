@@ -10,18 +10,35 @@ set(INCLUDE_DIR "include")
 set(DEBUG_COMPILE_OPTIONS "-Wall" "-pedantic" "-g3" "-O0" "-std=c++20" "-DDEBUG")
 set(RELEASE_COMPILE_OPTIONS "-O3" "-DNDEBUG" "-std=c++20" "-UDEBUG")
 
-# set c++17 required
+# set c++20 required
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
+include(FetchContent)
+FetchContent_Declare(
+    argparse
+    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+)
+FetchContent_MakeAvailable(argparse)
+
 # sources
 file(GLOB SOURCES "src/*.cpp")
-include_directories(${INCLUDE_DIR})
-
-# debug 
-add_executable(${APP_NAME}_debug ${SOURCES})
-target_compile_options(${APP_NAME}_debug PRIVATE ${DEBUG_COMPILE_OPTIONS})
 
 # release executable
-add_executable(${APP_NAME}_release ${SOURCES})
-target_compile_options(${APP_NAME}_release PRIVATE ${RELEASE_COMPILE_OPTIONS})
+add_executable(${APP_NAME} ${SOURCES})
+target_include_directories(${APP_NAME} PRIVATE ${INCLUDE_DIR})
+target_link_libraries(${APP_NAME} argparse)
+target_compile_options(${APP_NAME} PRIVATE 
+    -Wall
+    -Wextra
+    -Wpedantic
+    $<$<CONFIG:Debug>:
+        -g3
+        -O0
+        -DDEBUG
+    >
+    $<$<CONFIG:Release>:
+        -O3
+        -DNDEBUG
+    >
+)
