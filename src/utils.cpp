@@ -6,9 +6,9 @@
 
 void jc::log::debug(const std::string &msg)
 {
-  // #ifdef DEBUG
+#ifdef DEBUG
   std::cout << "[DEBUG] " << msg << "\n";
-  // #endif
+#endif
 }
 
 void jc::log::ast(const jc::ast::NodePtr &node)
