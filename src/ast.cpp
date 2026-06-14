@@ -711,7 +711,7 @@ NodePtr AST::obj_atom(const PTNode &root)
 std::vector<NodePtr> AST::list_exp(const PTNode &root)
 {
   std::vector<NodePtr> expressions;
-  if (root.children.empty())
+  if (root.children.empty() || !has_any_member(root.children))
     return expressions;
 
   NodePtr current_expr = exp(std::get<PTNode>(root.children[0]->value));
