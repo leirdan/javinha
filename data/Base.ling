@@ -1,0 +1,6 @@
+/* Programa Base para testes. */
+class Programa{
+    public static void main(String[] a){
+	    System.out.println( 10 - 10 * 50);
+    }
+}

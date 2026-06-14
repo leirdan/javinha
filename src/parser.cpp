@@ -1,5 +1,6 @@
 #include <utility>
 #include <unordered_set>
+#include <variant>
 #include <exception>
 #include <iostream>
 #include <stdexcept>
@@ -24,9 +25,8 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
 {
   u64 n = tokens.size();
   std::vector<StateSet> chart(n + 1);
-  GProduction def = grammar::grammar.at(0).rhs.at(0);
-  chart.at(0).insert(State(grammar::start_symbol,
-                           &def, (u8)0, (u8)0));
+  const GProduction *def = &grammar::grammar.at(0).rhs.at(0);
+  chart.at(0).insert(State(grammar::start_symbol, def, (u8)0, (u8)0));
 
   log::debug("Preparado estado inicial para Earley Parser.");
 
@@ -128,6 +128,30 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
     }
   }
 
+  if (this->has_ended(chart, n))
+  {
+    using DFSStateSet = std::vector<std::vector<DFSEdge>>;
+    DFSStateSet reversed_chart(n + 1);
+    for (u64 i = 0; i <= n; i++)
+    {
+      StateSet state_set = chart.at(i);
+      for (auto &state : state_set)
+      {
+        if (!state.is_complete())
+          continue;
+
+        u64 src = state.start;
+        DFSEdge edge;
+        edge.state = state;
+        edge.finish = i;
+        reversed_chart[src].push_back(edge);
+      }
+    }
+
+    auto tree = parse_tree(tokens, chart, reversed_chart);
+    print_tree(tree);
+  }
+
   return this->has_ended(chart, n);
 }
 
@@ -209,6 +233,208 @@ bool Parser::has_ended(const std::vector<StateSet> &chart, u64 last)
       return true;
   }
   return false;
+}
+
+std::optional<std::vector<std::pair<u64, DFSEdge>>> Parser::dfs(
+    std::function<std::vector<DFSEdge>(i64, const u64 &)> edges,
+    std::function<u64(i64, const DFSEdge &)> child,
+    std::function<bool(i64, const u64 &)> pred,
+    const u64 &root_node)
+{
+  std::function<std::optional<std::vector<std::pair<u64, DFSEdge>>>(i64, const u64 &)> rec_aux =
+      [&](i64 depth, const u64 &current_node) -> std::optional<std::vector<std::pair<u64, DFSEdge>>>
+  {
+    // if pred depth root then Some []
+    if (pred(depth, current_node))
+      return std::vector<std::pair<u64, DFSEdge>>{};
+
+    // edges depth root
+    auto available_edges = edges(depth, current_node);
+
+    for (const auto &edge : available_edges)
+    {
+      // child depth edge
+      u64 next_node = child(depth, edge);
+      auto result = rec_aux(depth + 1, next_node);
+
+      if (result.has_value())
+      {
+        result->insert(result->begin(), std::make_pair(current_node, edge));
+        return result;
+      }
+    }
+
+    // None if none edge reached the destiny
+    return std::nullopt;
+  };
+
+  // in aux -1 root
+  return rec_aux(0, root_node);
+}
+
+// me dê os estados que começam aqui e me diga em qual coluna do chart eles terminaram!!
+std::vector<std::pair<u64, DFSEdge>> Parser::top_list(
+    const std::vector<Token> &tokens,
+    const std::vector<DFSNode> &chart,
+    const DFSEdge &edge,
+    u64 start)
+{
+  const GProduction *symbols = edge.state.rhs;
+  u8 bottom = symbols->size;
+
+  auto pred = [bottom, finish = edge.finish](i64 depth, u64 current_start) -> bool
+  {
+    return (depth == (i64)bottom) && (current_start == finish);
+  };
+
+  auto child = [](i64 depth, const DFSEdge &edge) -> u64
+  {
+    return edge.finish;
+  };
+
+  auto edges = [&](i64 depth, u64 current_start) -> DFSNode
+  {
+    // if depth >= DA.length symbols then DA.make_empty ()
+    if (depth < 0 || depth >= (i64)bottom)
+    {
+      return {};
+    }
+
+    // match symbols >: depth with ...
+    const GSymbol &current_symbol = symbols->data[depth];
+
+    if (current_symbol.type == SymbolType::TERMINAL)
+    {
+      const u8 term = current_symbol.value;
+
+      // if t (input start)
+      if (term == (u8)map_token(tokens.at(current_start)))
+      {
+        log::debug(std::format("[EDGES] terminal {}, token {}", symbol_to_string((T)term), tokens.at(current_start).value));
+        return {DFSEdge{State{}, current_start + 1}};
+      }
+      else
+      {
+        return {};
+      }
+    }
+    // special treatment for lambda: it does not move the finish
+    else if (current_symbol.type == SymbolType::LAMBDA)
+    {
+      log::debug(std::format("[EDGES] lambda: current_start={}", current_start));
+      return {DFSEdge{State{}, current_start}};
+    }
+    else
+    {
+      // (chart >: start)
+      // get all edges starting from current_start node
+      const auto &candidates = chart[current_start];
+
+      log::debug(std::format("[EDGES] NT = {}; candidates in [{}] = {}", symbol_to_string((NT)current_symbol.value), current_start, candidates.size()));
+      for (const auto &e : candidates)
+        log::debug(std::format("  candidate lhs={}; finish={}", symbol_to_string(e.state.lhs), e.finish));
+
+      DFSNode filtered_edges;
+
+      for (const auto &edge : candidates)
+      {
+        if ((u8)edge.state.lhs == current_symbol.value)
+        {
+          log::debug(std::format(" accepted symbol: ", symbol_to_string(edge.state.lhs)));
+          filtered_edges.push_back(edge);
+        }
+      }
+      return filtered_edges;
+    }
+  };
+
+  auto path_opt = dfs(edges, child, pred, start);
+
+  if (!path_opt.has_value())
+  {
+    throw std::runtime_error("there's always a solution");
+  }
+
+  return path_opt.value();
+}
+
+PTree Parser::parse_tree(
+    const std::vector<Token> &tokens,
+    const std::vector<StateSet> &chart,
+    const std::vector<std::vector<DFSEdge>> &reversed_chart)
+{
+  log::debug(std::format("[GEN] iniciando, finish={}", chart.size() - 1));
+
+  u64 start = 0;
+  u64 finish = chart.size() - 1;
+
+  std::function<PTree(u64, const DFSEdge &)> rec_aux =
+      [&](u64 current_start, const DFSEdge &edge) -> PTree
+  {
+    PTree target_node;
+
+    if (edge.state.rhs == nullptr)
+    {
+      if (edge.finish > current_start) // token
+        target_node.value = std::make_optional(tokens.at(current_start));
+      else // lambda
+        target_node.value = std::nullopt;
+      return target_node;
+    }
+    else
+    {
+      PTNode internal;
+      internal.rule = edge.state.lhs;
+      // sub-paths to reconstruct this particular rule
+      auto sub_paths = top_list(tokens, reversed_chart, edge, current_start);
+
+      for (const auto &[step_start, step_edge] : sub_paths)
+      {
+        PTree child_tree = rec_aux(step_start, step_edge);
+        internal.children.push_back(std::make_unique<PTree>(std::move(child_tree)));
+      }
+      target_node.value = std::move(internal);
+      return target_node;
+    }
+  };
+
+  std::optional<DFSEdge> root_edge = std::nullopt;
+
+  for (const auto &edge : reversed_chart.at(start))
+  {
+    if (edge.finish == finish && edge.state.lhs == jc::grammar::start_symbol && edge.state.is_complete())
+    {
+      root_edge = edge;
+      break;
+    }
+  }
+  if (!root_edge.has_value())
+  {
+    throw std::runtime_error("Are you sure this parse succeeded?");
+  }
+
+  return rec_aux(start, root_edge.value());
+};
+
+void Parser::print_tree(const PTree &node, int indent)
+{
+  std::string pad(indent * 2, ' ');
+
+  std::visit([&](auto &&val)
+             {
+    using T = std::decay_t<decltype(val)>;
+
+    if constexpr (std::is_same_v<T, PTNode>)
+    {
+      std::cout << pad << "[" << symbol_to_string(val.rule) << "]\n";
+      for (const auto &child : val.children)
+        print_tree(*child, indent + 1);
+    }
+    else if constexpr (std::is_same_v<T, std::optional<Token>>)
+    {
+      if (val.has_value())
+        std::cout << pad << "\"" << val->value << "\"\n";
+    } }, node.value);
 }
 
 static T map_token(const Token &t)
