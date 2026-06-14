@@ -246,7 +246,7 @@ namespace jc
       {
         std::cout << tabs << (is_last ? "└── " : "├── ") << "Var[" << name << "]\n";
         if (type)
-          type->print(is_last ? "    " : "|   ", true);
+          type->print(tabs + (is_last ? "    " : "|   "), true);
       }
     };
 

@@ -153,9 +153,7 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
     auto tree = parse_tree(tokens, chart, reversed_chart);
     print_tree(tree);
     auto ast = ast::AST();
-    // ast.create(tree);
     ast::NodePtr ptr = ast.create(tree);
-    std::cout << (int)ptr->kind;
   }
 
   return this->has_ended(chart, n);
