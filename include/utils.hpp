@@ -1,5 +1,4 @@
 #pragma once
-#include "token.hpp"
 #include "types.hpp"
 #include <memory>
 
@@ -17,10 +16,13 @@ namespace jc
     using NodePtr = std::unique_ptr<Node>;
     enum class TypeKind : u8;
   }
+
+  enum class TokenType : u8;
 }
 
 namespace jc
 {
+  std::string to_string(const jc::TokenType t);
   std::string to_string(const jc::ast::TypeKind tk);
   std::string to_string(const jc::grammar::SymbolType symbol);
   std::string to_string(const jc::grammar::NT nt);

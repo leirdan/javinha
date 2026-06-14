@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 {
   if (argc != 3)
   {
-    std::cerr << "usage: ./javinha_release input.ling output.txt\n";
+    std::cerr << "usage: ./javinha input.ling output.txt\n";
     return EXIT_FAILURE;
   }
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   o_stream << "TOKENS:\n";
   for (const auto &t : tokens)
   {
-    o_stream << "(" << token_to_string(t.type) << ", " << t.value
+    o_stream << "(" << jc::to_string(t.type) << ", " << t.value
              << ") [linha " << t.line << "]\n";
   }
 

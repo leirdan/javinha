@@ -1,5 +1,6 @@
 #include <iostream>
 #include "utils.hpp"
+#include "token.hpp"
 #include "ast.hpp"
 #include "grammar.hpp"
 
@@ -16,6 +17,27 @@ void jc::log::ast(const jc::ast::NodePtr &node)
   auto *prog = static_cast<jc::ast::ProgramNode *>(node.get());
   prog->print();
   // #endif
+}
+
+std::string jc::to_string(jc::TokenType t)
+{
+  switch (t)
+  {
+  case TokenType::IDENTIFIER:
+    return "IDENTIFIER";
+  case TokenType::KEYWORD:
+    return "KEYWORD";
+  case TokenType::NUMBER:
+    return "NUMBER";
+  case TokenType::OPERATOR:
+    return "OPERATOR";
+  case TokenType::DELIMITER:
+    return "DELIMITER";
+  case TokenType::END_OF_FILE:
+    return "EOF";
+  default:
+    return "UNKNOWN";
+  }
 }
 
 std::string jc::to_string(const jc::ast::TypeKind tk)

@@ -2,10 +2,11 @@
 #include <string>
 #include <format>
 #include "types.hpp"
+#include "utils.hpp"
 
 namespace jc
 {
-    enum class TokenType
+    enum class TokenType : u8
     {
         IDENTIFIER,
         KEYWORD,
@@ -16,26 +17,6 @@ namespace jc
         UNKNOWN
     };
 
-    inline std::string token_to_string(TokenType t)
-    {
-        switch (t)
-        {
-        case TokenType::IDENTIFIER:
-            return "IDENTIFIER";
-        case TokenType::KEYWORD:
-            return "KEYWORD";
-        case TokenType::NUMBER:
-            return "NUMBER";
-        case TokenType::OPERATOR:
-            return "OPERATOR";
-        case TokenType::DELIMITER:
-            return "DELIMITER";
-        case TokenType::END_OF_FILE:
-            return "EOF";
-        default:
-            return "UNKNOWN";
-        }
-    }
     struct Token
     {
         TokenType type;
@@ -45,7 +26,7 @@ namespace jc
 
         std::string to_string() const
         {
-            return std::format("({}, {})", value, jc::token_to_string(type));
+            return std::format("({}, {})", value, jc::to_string(type));
         }
     };
 }
