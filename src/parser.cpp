@@ -6,7 +6,9 @@
 #include <stdexcept>
 #include "parser.hpp"
 #include "utils.hpp"
+#include "ast.hpp"
 
+using namespace jc;
 using namespace jc::parser;
 static T map_token(const Token &t);
 
@@ -150,6 +152,9 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
 
     auto tree = parse_tree(tokens, chart, reversed_chart);
     print_tree(tree);
+    auto ast = ast::AST();
+    ast::NodePtr ptr = ast.create(tree);
+    log::ast(ptr);
   }
 
   return this->has_ended(chart, n);
@@ -310,7 +315,7 @@ std::vector<std::pair<u64, DFSEdge>> Parser::top_list(
       // if t (input start)
       if (term == (u8)map_token(tokens.at(current_start)))
       {
-        log::debug(std::format("[EDGES] terminal {}, token {}", symbol_to_string((T)term), tokens.at(current_start).value));
+        log::debug(std::format("[EDGES] terminal {}, token {}", jc::to_string((T)term), tokens.at(current_start).value));
         return {DFSEdge{State{}, current_start + 1}};
       }
       else
@@ -330,9 +335,9 @@ std::vector<std::pair<u64, DFSEdge>> Parser::top_list(
       // get all edges starting from current_start node
       const auto &candidates = chart[current_start];
 
-      log::debug(std::format("[EDGES] NT = {}; candidates in [{}] = {}", symbol_to_string((NT)current_symbol.value), current_start, candidates.size()));
+      log::debug(std::format("[EDGES] NT = {}; candidates in [{}] = {}", jc::to_string((NT)current_symbol.value), current_start, candidates.size()));
       for (const auto &e : candidates)
-        log::debug(std::format("  candidate lhs={}; finish={}", symbol_to_string(e.state.lhs), e.finish));
+        log::debug(std::format("  candidate lhs={}; finish={}", jc::to_string(e.state.lhs), e.finish));
 
       DFSNode filtered_edges;
 
@@ -340,7 +345,7 @@ std::vector<std::pair<u64, DFSEdge>> Parser::top_list(
       {
         if ((u8)edge.state.lhs == current_symbol.value)
         {
-          log::debug(std::format(" accepted symbol: ", symbol_to_string(edge.state.lhs)));
+          log::debug(std::format(" accepted symbol: ", jc::to_string(edge.state.lhs)));
           filtered_edges.push_back(edge);
         }
       }
@@ -426,7 +431,7 @@ void Parser::print_tree(const PTree &node, int indent)
 
     if constexpr (std::is_same_v<T, PTNode>)
     {
-      std::cout << pad << "[" << symbol_to_string(val.rule) << "]\n";
+      std::cout << pad << "[" << jc::to_string(val.rule) << "]\n";
       for (const auto &child : val.children)
         print_tree(*child, indent + 1);
     }

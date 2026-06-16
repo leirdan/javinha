@@ -7,6 +7,7 @@
 #include <format>
 #include "grammar.hpp"
 #include "lexer.hpp"
+#include "utils.hpp"
 
 namespace jc
 {
@@ -68,7 +69,7 @@ namespace jc
 
       const std::string to_string() const
       {
-        std::string sb = symbol_to_string(lhs) + " -> ";
+        std::string sb = jc::to_string(lhs) + " -> ";
         for (u8 i = 0; i < rhs->size; i++)
         {
           if (i == dot)

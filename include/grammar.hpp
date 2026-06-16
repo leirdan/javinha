@@ -3,6 +3,7 @@
 #include <array>
 #include <string>
 #include "types.hpp"
+#include "utils.hpp"
 
 namespace jc
 {
@@ -86,10 +87,6 @@ namespace jc
       END
     };
 
-    const static std::string type_to_string(SymbolType t);
-    const static std::string symbol_to_string(NT nt);
-    const static std::string symbol_to_string(T t);
-
     struct GSymbol
     {
       SymbolType type;
@@ -123,10 +120,10 @@ namespace jc
         switch (type)
         {
         case SymbolType::TERMINAL:
-          return symbol_to_string(static_cast<jc::grammar::T>(value));
+          return jc::to_string(static_cast<jc::grammar::T>(value));
 
         case SymbolType::NON_TERMINAL:
-          return symbol_to_string(static_cast<jc::grammar::NT>(value));
+          return jc::to_string(static_cast<jc::grammar::NT>(value));
 
         case SymbolType::LAMBDA:
           return "λ";
@@ -191,7 +188,7 @@ namespace jc
 
       const std::string to_string()
       {
-        std::string out = symbol_to_string(lhs) + " -> ";
+        std::string out = jc::to_string(lhs) + " -> ";
         for (size_t i = 0; i < rhs.size(); i++)
         {
           out += rhs[i].to_string();
@@ -267,164 +264,5 @@ namespace jc
       return -1;
     }
 
-    const static std::string type_to_string(SymbolType t)
-    {
-      switch (t)
-      {
-      case SymbolType::LAMBDA:
-        return "LAMBDA";
-      case SymbolType::NON_TERMINAL:
-        return "NON TERMINAL";
-      case SymbolType::TERMINAL:
-        return "TERMINAL";
-      }
-      return "UNKNOWN";
-    }
-
-    const static std::string symbol_to_string(NT nt)
-    {
-      switch (nt)
-      {
-      case NT::START:
-        return "START";
-      case NT::PROG:
-        return "PROG";
-      case NT::MAINC:
-        return "MAINC";
-      case NT::DEFCL:
-        return "DEFCL";
-      case NT::DEFVAR:
-        return "DEFVAR";
-      case NT::DEFMET:
-        return "DEFMET";
-      case NT::TYPE:
-        return "TYPE";
-      case NT::ARGS:
-        return "ARGS";
-      case NT::LISTCMD:
-        return "LISTCMD";
-      case NT::CMD:
-        return "CMD";
-      case NT::EXP:
-        return "EXP";
-      case NT::EXP2:
-        return "EXP2";
-      case NT::GREATER:
-        return "GREATER";
-      case NT::GREATER2:
-        return "GREATER2";
-      case NT::ADD:
-        return "ADD";
-      case NT::ADD2:
-        return "ADD2";
-      case NT::MUL:
-        return "MUL";
-      case NT::MUL2:
-        return "MUL2";
-      case NT::NEG:
-        return "NEG";
-      case NT::OBJ:
-        return "OBJ";
-      case NT::OBJATOM:
-        return "OBJATOM";
-      case NT::OBJMET:
-        return "OBJMET";
-      case NT::LISTEXP:
-        return "LISTEXP";
-      default:
-        break;
-      }
-      return "UNKNOWN_NT";
-    }
-
-    const static std::string symbol_to_string(T t)
-    {
-      switch (t)
-      {
-      case T::CLASS:
-        return "class";
-      case T::PUBLIC:
-        return "public";
-      case T::STATIC:
-        return "static";
-      case T::VOID:
-        return "void";
-      case T::MAIN:
-        return "main";
-      case T::STRING:
-        return "String";
-      case T::IF:
-        return "if";
-      case T::ELSE:
-        return "else";
-      case T::WHILE:
-        return "while";
-      case T::SYSTEM:
-        return "System";
-      case T::OUT:
-        return "out";
-      case T::PRINTLN:
-        return "println";
-      case T::RETURN:
-        return "return";
-      case T::EXTENDS:
-        return "extends";
-      case T::INT:
-        return "int";
-      case T::BOOLEAN:
-        return "boolean";
-      case T::TRUE:
-        return "true";
-      case T::FALSE:
-        return "false";
-      case T::THIS:
-        return "this";
-      case T::NEW:
-        return "new";
-      case T::PLUS:
-        return "+";
-      case T::MINUS:
-        return "-";
-      case T::MULT:
-        return "*";
-      case T::GT:
-        return ">";
-      case T::AND:
-        return "&&";
-      case T::NOT:
-        return "!";
-      case T::ASSIGN:
-        return "=";
-      case T::LPAR:
-        return "(";
-      case T::RPAR:
-        return ")";
-      case T::LBRACE:
-        return "{";
-      case T::RBRACE:
-        return "}";
-      case T::LBRACKET:
-        return "[";
-      case T::RBRACKET:
-        return "]";
-      case T::DOT:
-        return ".";
-      case T::COMMA:
-        return ",";
-      case T::SEMICOLON:
-        return ";";
-      case T::ID:
-        return "id";
-      case T::NUMBER:
-        return "number";
-      case T::LENGTH:
-        return "length";
-      case T::END:
-        return "EOF";
-      default:
-        break;
-      }
-      return "UNKNOWN_T";
-    }
   } // namespace grammar
 } // namespace jc

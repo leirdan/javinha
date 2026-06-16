@@ -1,15 +1,39 @@
 #pragma once
-#include "grammar.hpp"
-#include "token.hpp"
 #include "types.hpp"
+#include <memory>
 
-using namespace jc;
-using namespace jc::grammar;
+namespace jc
+{
+  namespace grammar
+  {
+    enum class SymbolType : u8;
+    enum class NT : u8;
+    enum class T : u8;
+  }
+  namespace ast
+  {
+    struct Node;
+    using NodePtr = std::unique_ptr<Node>;
+    enum class TypeKind : u8;
+  }
+
+  enum class TokenType : u8;
+}
+
+namespace jc
+{
+  std::string to_string(const jc::TokenType t);
+  std::string to_string(const jc::ast::TypeKind tk);
+  std::string to_string(const jc::grammar::SymbolType symbol);
+  std::string to_string(const jc::grammar::NT nt);
+  std::string to_string(const jc::grammar::T t);
+}
 
 namespace jc
 {
   namespace log
   {
-    void debug(const std::string &&msg);
+    void debug(const std::string &msg);
+    void ast(const jc::ast::NodePtr &node);
   }
 }
