@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
   for (const auto &[k, v] : symbols.get_all())
   {
     o_stream << v.name
-             << " | categoria: " << v.category
              << " | tipo: " << v.type
              << " | linha: " << v.line << "\n";
   }

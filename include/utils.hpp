@@ -16,8 +16,14 @@ namespace jc
     using NodePtr = std::unique_ptr<Node>;
     enum class TypeKind : u8;
   }
+  namespace parser
+  {
+    struct PTree;
+    struct PTNode;
+  }
 
   enum class TokenType : u8;
+  class SymbolTable;
 }
 
 namespace jc
@@ -35,5 +41,6 @@ namespace jc
   {
     void debug(const std::string &msg);
     void ast(const jc::ast::NodePtr &node);
+    void symbol_table(const jc::SymbolTable &table);
   }
 }

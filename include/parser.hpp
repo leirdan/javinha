@@ -8,6 +8,7 @@
 #include "grammar.hpp"
 #include "lexer.hpp"
 #include "utils.hpp"
+#include "ast.hpp"
 
 namespace jc
 {
@@ -132,6 +133,7 @@ namespace jc
       std::vector<ParserError> errors;
       // Avoiding type "grammar::grammar" everytime inside the Parser...
       const Grammar *grammar = &grammar::grammar;
+      ast::NodePtr ast_root;
 
       void add_error(u64 pos, u32 line, const std::string &msg, const std::string &found, const std::string &expected)
       {
@@ -215,6 +217,9 @@ namespace jc
           const std::vector<std::vector<DFSEdge>> &reversed_chart);
 
       void print_tree(const PTree &node, int indent = 0);
+
+      u8 scope_id = 0;
+      void fill_scopes(ast::Node &root);
 
     public:
       Parser(const SymbolTable &&symbols) : symbols(symbols) {};

@@ -19,6 +19,11 @@ void jc::log::ast(const jc::ast::NodePtr &node)
   // #endif
 }
 
+void jc::log::symbol_table(const jc::SymbolTable &table)
+{
+  table.print();
+}
+
 std::string jc::to_string(jc::TokenType t)
 {
   switch (t)

@@ -22,6 +22,26 @@ NodePtr AST::create(const PTree &root)
   return nullptr;
 }
 
+bool AST::has_any_member(const std::vector<std::unique_ptr<PTree>> &children)
+{
+  for (const auto &child : children)
+  {
+    if (std::holds_alternative<std::optional<Token>>(child->value))
+    {
+      const auto &token_opt = std::get<std::optional<Token>>(child->value);
+      if (token_opt.has_value())
+        return true;
+    }
+    else
+    {
+      const auto &rule = std::get<PTNode>(child->value);
+      return has_any_member(rule.children);
+    }
+  }
+
+  return false;
+}
+
 NodePtr AST::prog(const PTNode &root)
 {
   if (root.rule != NT::PROG)

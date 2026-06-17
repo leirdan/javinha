@@ -10,6 +10,7 @@
 
 using namespace jc;
 using namespace jc::parser;
+using namespace jc::ast;
 static T map_token(const Token &t);
 
 bool State::is_complete() const
@@ -153,11 +154,98 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
     auto tree = parse_tree(tokens, chart, reversed_chart);
     print_tree(tree);
     auto ast = ast::AST();
-    ast::NodePtr ptr = ast.create(tree);
-    log::ast(ptr);
+    ast_root = ast.create(tree);
+    log::ast(ast_root);
+    fill_scopes(*ast_root);
+    log::symbol_table(symbols);
   }
 
   return this->has_ended(chart, n);
+}
+
+void Parser::fill_scopes(Node &root)
+{
+  switch (root.kind)
+  {
+  case Kind::PROGRAM:
+  {
+    auto node = dynamic_cast<ProgramNode *>(&root);
+    fill_scopes(*node->main_class);
+    std::for_each(node->classes.begin(), node->classes.end(), [&](const auto &cl)
+                  { fill_scopes(*cl); });
+    break;
+  }
+  case Kind::CLASS:
+  {
+    auto node = dynamic_cast<ClassNode *>(&root);
+    symbols.add_scope_to(node->name, 0);
+    if (node->parent.has_value() && symbols.exists(node->parent.value())) // tratando de adicionar escopos herdados !
+    {
+      const auto &parent_sym = symbols.get(node->parent.value());
+      for (auto s : parent_sym.scopes)
+        symbols.add_scope_to(node->name, s);
+    }
+    scope_id++;
+    std::for_each(node->fields.begin(), node->fields.end(), [&](const auto &f)
+                  { fill_scopes(*f); });
+    std::for_each(node->methods.begin(), node->methods.end(), [&](const auto &m)
+                  { fill_scopes(*m); });
+    break;
+  }
+
+  case Kind::MAIN_CLASS:
+  {
+    auto node = dynamic_cast<MainClassNode *>(&root);
+    symbols.add_scope_to(node->name, 0);
+    scope_id++;
+    fill_scopes(*node->main_method);
+    break;
+  }
+  case Kind::MAIN_METHOD:
+  {
+    auto node = dynamic_cast<MainMethodNode *>(&root);
+    symbols.add_scope_to(node->name, scope_id++);
+    // computar o escopo do parametro tbm!
+    // fill_scopes(*node->param);
+    fill_scopes(*node->body);
+    break;
+  }
+  case Kind::METHOD:
+  {
+    auto node = dynamic_cast<MethodNode *>(&root);
+    symbols.add_scope_to(node->name, scope_id++);
+    std::for_each(node->params.begin(), node->params.end(), [&](const auto &param)
+                  { fill_scopes(*param); });
+    std::for_each(node->locals.begin(), node->locals.end(), [&](const auto &var)
+                  { fill_scopes(*var); });
+    fill_scopes(*node->body);
+    break;
+  }
+  case Kind::BLOCK:
+  {
+    auto node = dynamic_cast<BlockNode *>(&root);
+    scope_id++;
+    std::for_each(node->stmt.begin(), node->stmt.end(), [&](const auto &stmt)
+                  { fill_scopes(*stmt); });
+    break;
+  }
+  case Kind::VAR_DECL:
+  {
+    auto node = dynamic_cast<VarDeclNode *>(&root);
+    // TODO: add informação de tipo tbm! e mudar esse nome dessa função pra fill_symbols_table pq vamos criar ela do zero!
+    symbols.add_scope_to(node->name, scope_id);
+    break;
+  }
+  case Kind::IDENTIFIER:
+  {
+    auto node = dynamic_cast<IdentifierNode *>(&root);
+    symbols.add_scope_to(node->name, scope_id);
+    break;
+  }
+
+  default:
+    break;
+  }
 }
 
 bool Parser::predict(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 it)
