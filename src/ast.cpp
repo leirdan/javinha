@@ -258,13 +258,13 @@ NodePtr AST::type(const PTNode &root)
         if (token.type == TokenType::KEYWORD && token.value == "int")
         {
           if (root.children.size() == 3)
-            return std::make_unique<TypeNode>(TypeKind::INT_ARRAY);
+            return std::make_unique<TypeNode>(TypeKind::INT_ARRAY, "int[]");
           else if (root.children.size() == 1)
-            return std::make_unique<TypeNode>(TypeKind::INT);
+            return std::make_unique<TypeNode>(TypeKind::INT, "int");
         }
         else if (token.type == TokenType::KEYWORD && token.value == "boolean")
         {
-          return std::make_unique<TypeNode>(TypeKind::BOOLEAN);
+          return std::make_unique<TypeNode>(TypeKind::BOOLEAN, "boolean");
         }
         else if (token.type == TokenType::IDENTIFIER)
         {
