@@ -7,21 +7,20 @@
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "utils.hpp"
+#include "config.hpp"
 
 using namespace jc;
 
 int main(int argc, char *argv[])
 {
-  if (argc != 3)
+  CompilerConfig config;
+  if (!config.parse(argc, argv))
   {
-    std::cerr << "usage: ./javinha input.ling output.txt\n";
+    std::cerr << "usage: ./javinha input.ling output.txt [--tokens]\n";
     return EXIT_FAILURE;
   }
 
-  char *input_file = argv[1];
-  char *output_file = argv[2];
-
-  std::ifstream f_stream(input_file);
+  std::ifstream f_stream(config.inputFile);
   if (!f_stream.is_open())
   {
     std::cerr << "file not found\n";
@@ -47,6 +46,7 @@ int main(int argc, char *argv[])
     {
       std::cerr << error;
     }
+    delete lexer;
     return EXIT_FAILURE;
   }
 
@@ -55,33 +55,26 @@ int main(int argc, char *argv[])
 
   delete lexer;
 
-  std::ofstream o_stream(output_file);
-
-  if (!o_stream.is_open())
+  if (config.printTokens)
   {
-    std::cerr << "error creating output file\n";
-    return EXIT_FAILURE;
+    std::cout << "TOKENS:\n";
+    for (const auto &t : tokens)
+    {
+      std::cout << "(" << jc::to_string(t.type) << ", " << t.value
+                << ") [linha " << t.line << "]\n";
+    }
+
+    std::cout << "\nSYMBOL TABLE:\n";
+    for (const auto &[k, v] : symbols.get_all())
+    {
+      std::cout << v.name
+                << " | categoria: " << v.category
+                << " | tipo: " << v.type
+                << " | linha: " << v.line << "\n";
+    }
+
+    return EXIT_SUCCESS;
   }
-
-  o_stream << "TOKENS:\n";
-  for (const auto &t : tokens)
-  {
-    o_stream << "(" << jc::to_string(t.type) << ", " << t.value
-             << ") [linha " << t.line << "]\n";
-  }
-
-  o_stream << "\nSYMBOL TABLE:\n";
-  for (const auto &[k, v] : symbols.get_all())
-  {
-    o_stream << v.name
-             << " | categoria: " << v.category
-             << " | tipo: " << v.type
-             << " | linha: " << v.line << "\n";
-  }
-
-  o_stream.close();
-
-  std::cout << "Analise léxica concluida com sucesso.\n";
 
   jc::parser::Parser parser(std::move(symbols));
   bool res = parser.earley_parse(std::move(tokens));
