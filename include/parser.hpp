@@ -229,7 +229,7 @@ namespace jc
        *
        * \return Boolean indicating whether the program is valid.
        */
-      bool earley_parse(const std::vector<Token> &&tokens);
+      bool earley_parse(const std::vector<Token> &&tokens, bool print_ast);
 
       const std::vector<ParserError> &get_errors() const
       {

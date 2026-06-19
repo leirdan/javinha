@@ -7,6 +7,7 @@ public:
     std::string outputFile;
     bool printTokens = false;
     bool firstLexicalError = false;
+    bool printAst = false;
 
     bool parse(int argc, char* argv[]) {
         argparse::ArgumentParser program("javinha");
@@ -25,12 +26,17 @@ public:
             .help("O processamento para no primeiro erro léxico")
             .flag();
 
+        program.add_argument("--ast")
+            .help("Printa a árvore sintática abstrata")
+            .flag();
+
         try {
             program.parse_args(argc, argv);
             inputFile = program.get<std::string>("input_file");
             outputFile = program.get<std::string>("output_file");
             printTokens = program.get<bool>("--tokens");
             firstLexicalError = program.get<bool>("--first_lexical_error");
+            printAst = program.get<bool>("--ast");
             return true;
         } catch (const std::exception& err) {
             return false;

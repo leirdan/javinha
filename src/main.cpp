@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   }
 
   jc::parser::Parser parser(std::move(symbols));
-  bool res = parser.earley_parse(std::move(tokens));
+  bool res = parser.earley_parse(std::move(tokens), config.printAst);
   if (res && !parser.has_errors())
   {
     std::cout << "Programa sintaticamente válido. \n";
