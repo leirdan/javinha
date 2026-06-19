@@ -71,16 +71,6 @@ int main(int argc, char *argv[])
       std::cout << "(" << jc::to_string(t.type) << ", " << t.value
                 << ") [linha " << t.line << "]\n";
     }
-
-    std::cout << "\nSYMBOL TABLE:\n";
-    for (const auto &[k, v] : symbols.get_all())
-    {
-      std::cout << v.name
-                << " | categoria: " << v.category
-                << " | tipo: " << v.type
-                << " | linha: " << v.line << "\n";
-    }
-
     return EXIT_SUCCESS;
   }
 
@@ -103,6 +93,18 @@ int main(int argc, char *argv[])
       std::cout << error.to_string() << "\n";
     }
     std::cout << "=========================================\n";
+  }
+
+  if (config.printSymbolTable)
+  {
+    std::cout << "\nSYMBOL TABLE:\n";
+    for (const auto &[k, v] : symbols.get_all())
+    {
+      std::cout << v.name
+                << " | categoria: " << v.category
+                << " | tipo: " << v.type
+                << " | linha: " << v.line << "\n";
+    }
   }
 
   return 0;

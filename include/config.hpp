@@ -8,6 +8,7 @@ public:
     bool printTokens = false;
     bool firstLexicalError = false;
     bool printAst = false;
+    bool printSymbolTable = false;
 
     bool parse(int argc, char* argv[]) {
         argparse::ArgumentParser program("javinha");
@@ -16,18 +17,21 @@ public:
         program.add_argument("input_file").required();
         program.add_argument("output_file").required();
 
-        // FLAG DE TOKENS
+        // flags
         program.add_argument("--tokens")
             .help("Printa a lista de tokens")
             .flag();
 
-        // FLAG PARA QUE O PROCESSAMENTO PARE NO PRIMEIRO ERRO LÉXICO
         program.add_argument("--first_lexical_error")
             .help("O processamento para no primeiro erro léxico")
             .flag();
 
         program.add_argument("--ast")
             .help("Printa a árvore sintática abstrata")
+            .flag();
+
+        program.add_argument("--symbol_table")
+            .help("Printa a table de símbolos")
             .flag();
 
         try {
@@ -37,6 +41,7 @@ public:
             printTokens = program.get<bool>("--tokens");
             firstLexicalError = program.get<bool>("--first_lexical_error");
             printAst = program.get<bool>("--ast");
+            printSymbolTable = program.get<bool>("--symbol_table");
             return true;
         } catch (const std::exception& err) {
             return false;
