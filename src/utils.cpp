@@ -60,6 +60,23 @@ std::string jc::to_string(const jc::ast::TypeKind tk)
   }
 }
 
+std::string jc::to_string(const jc::SymbolCategory symbol)
+{
+  switch (symbol)
+  {
+  case SymbolCategory::CLASS:
+    return "class";
+  case SymbolCategory::METHOD:
+    return "method";
+  case SymbolCategory::LOCAL:
+    return "local";
+  case SymbolCategory::PARAM:
+    return "param";
+  default:
+    return "";
+  }
+}
+
 std::string jc::to_string(const jc::grammar::SymbolType symbol)
 {
   switch (symbol)

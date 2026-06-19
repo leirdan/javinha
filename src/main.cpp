@@ -71,12 +71,7 @@ int main(int argc, char *argv[])
   }
 
   o_stream << "\nSYMBOL TABLE:\n";
-  for (const auto &[k, v] : symbols.get_all())
-  {
-    o_stream << v.name
-             << " | tipo: " << v.type
-             << " | linha: " << v.line << "\n";
-  }
+  symbols.print(o_stream);
 
   o_stream.close();
 

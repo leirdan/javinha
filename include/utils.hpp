@@ -23,6 +23,7 @@ namespace jc
   }
 
   enum class TokenType : u8;
+  enum class SymbolCategory : u8;
   class SymbolTable;
 }
 
@@ -31,6 +32,7 @@ namespace jc
   std::string to_string(const jc::TokenType t);
   std::string to_string(const jc::ast::TypeKind tk);
   std::string to_string(const jc::grammar::SymbolType symbol);
+  std::string to_string(const jc::SymbolCategory symbol);
   std::string to_string(const jc::grammar::NT nt);
   std::string to_string(const jc::grammar::T t);
 }

@@ -219,7 +219,7 @@ namespace jc
       void print_tree(const PTree &node, int indent = 0);
 
       u8 scope_id = 0;
-      void fill_scopes(ast::Node &root);
+      void fill_symbol_table(ast::Node &root);
 
     public:
       Parser(const SymbolTable &&symbols) : symbols(symbols) {};

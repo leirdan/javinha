@@ -156,69 +156,73 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
     auto ast = ast::AST();
     ast_root = ast.create(tree);
     log::ast(ast_root);
-    fill_scopes(*ast_root);
+    fill_symbol_table(*ast_root);
     log::symbol_table(symbols);
   }
 
   return this->has_ended(chart, n);
 }
 
-void Parser::fill_scopes(Node &root)
+void Parser::fill_symbol_table(Node &root)
 {
   switch (root.kind)
   {
   case Kind::PROGRAM:
   {
     auto node = dynamic_cast<ProgramNode *>(&root);
-    fill_scopes(*node->main_class);
+    fill_symbol_table(*node->main_class);
     std::for_each(node->classes.begin(), node->classes.end(), [&](const auto &cl)
-                  { fill_scopes(*cl); });
+                  { fill_symbol_table(*cl); });
     break;
   }
   case Kind::CLASS:
   {
     auto node = dynamic_cast<ClassNode *>(&root);
-    symbols.add_scope_to(node->name, 0);
+    symbols.insert(node->name, SymbolCategory::CLASS, 0);
     if (node->parent.has_value() && symbols.exists(node->parent.value())) // tratando de adicionar escopos herdados !
     {
-      const auto &parent_sym = symbols.get(node->parent.value());
-      for (auto s : parent_sym.scopes)
-        symbols.add_scope_to(node->name, s);
     }
     scope_id++;
     std::for_each(node->fields.begin(), node->fields.end(), [&](const auto &f)
-                  { fill_scopes(*f); });
+                  { fill_symbol_table(*f); });
     std::for_each(node->methods.begin(), node->methods.end(), [&](const auto &m)
-                  { fill_scopes(*m); });
+                  { fill_symbol_table(*m); });
     break;
   }
 
   case Kind::MAIN_CLASS:
   {
     auto node = dynamic_cast<MainClassNode *>(&root);
-    symbols.add_scope_to(node->name, 0);
+    symbols.insert(node->name, SymbolCategory::CLASS, 0);
     scope_id++;
-    fill_scopes(*node->main_method);
+    fill_symbol_table(*node->main_method);
     break;
   }
   case Kind::MAIN_METHOD:
   {
     auto node = dynamic_cast<MainMethodNode *>(&root);
-    symbols.add_scope_to(node->name, scope_id++);
-    // computar o escopo do parametro tbm!
-    // fill_scopes(*node->param);
-    fill_scopes(*node->body);
+    symbols.insert(node->name, node->return_type, SymbolCategory::METHOD, scope_id++);
+    ParamNode param_node;
+    param_node.name = node->param;
+    param_node.type = std::make_unique<TypeNode>(TypeKind::STRING_ARRAY, "String[]");
+    fill_symbol_table(param_node);
+    fill_symbol_table(*node->body);
     break;
   }
   case Kind::METHOD:
   {
     auto node = dynamic_cast<MethodNode *>(&root);
-    symbols.add_scope_to(node->name, scope_id++);
-    std::for_each(node->params.begin(), node->params.end(), [&](const auto &param)
-                  { fill_scopes(*param); });
-    std::for_each(node->locals.begin(), node->locals.end(), [&](const auto &var)
-                  { fill_scopes(*var); });
-    fill_scopes(*node->body);
+    if (node->return_type)
+    {
+      auto type = dynamic_cast<TypeNode *>(&(*node->return_type));
+      symbols.insert(node->name, type->name, SymbolCategory::METHOD, scope_id++);
+      std::for_each(node->params.begin(), node->params.end(), [&](const auto &param)
+                    { fill_symbol_table(*param); });
+      std::for_each(node->locals.begin(), node->locals.end(), [&](const auto &var)
+                    { fill_symbol_table(*var); });
+      if (node->body)
+        fill_symbol_table(*node->body);
+    }
     break;
   }
   case Kind::BLOCK:
@@ -226,23 +230,117 @@ void Parser::fill_scopes(Node &root)
     auto node = dynamic_cast<BlockNode *>(&root);
     scope_id++;
     std::for_each(node->stmt.begin(), node->stmt.end(), [&](const auto &stmt)
-                  { fill_scopes(*stmt); });
+                  { fill_symbol_table(*stmt); });
     break;
   }
   case Kind::VAR_DECL:
   {
     auto node = dynamic_cast<VarDeclNode *>(&root);
-    // TODO: add informação de tipo tbm! e mudar esse nome dessa função pra fill_symbols_table pq vamos criar ela do zero!
-    symbols.add_scope_to(node->name, scope_id);
+    if (node->type)
+    {
+      auto type = dynamic_cast<TypeNode *>(&(*node->type));
+      symbols.insert(node->name, type->name, SymbolCategory::LOCAL, scope_id);
+    }
     break;
   }
-  case Kind::IDENTIFIER:
+  case Kind::PARAM:
   {
-    auto node = dynamic_cast<IdentifierNode *>(&root);
-    symbols.add_scope_to(node->name, scope_id);
+    auto node = dynamic_cast<ParamNode *>(&root);
+    auto type = dynamic_cast<TypeNode *>(&(*node->type));
+    symbols.insert(node->name, type->name, SymbolCategory::PARAM, scope_id);
     break;
   }
-
+  case Kind::IF:
+  {
+    auto node = dynamic_cast<IfNode *>(&root);
+    if (node->cond)
+      fill_symbol_table(*node->cond);
+    if (node->then_branch)
+      fill_symbol_table(*node->then_branch);
+    if (node->else_branch)
+      fill_symbol_table(*node->else_branch);
+    break;
+  }
+  case Kind::WHILE:
+  {
+    auto node = dynamic_cast<WhileNode *>(&root);
+    if (node->cond)
+      fill_symbol_table(*node->cond);
+    if (node->body)
+      fill_symbol_table(*node->body);
+    break;
+  }
+  case Kind::PRINT:
+  {
+    auto node = dynamic_cast<PrintNode *>(&root);
+    if (node->expr)
+      fill_symbol_table(*node->expr);
+    break;
+  }
+  case Kind::ASSIGN: // dá pra detectar na semântica se tem variável não declarada..
+  {
+    auto node = dynamic_cast<AssignNode *>(&root);
+    if (node->value)
+      fill_symbol_table(*node->value);
+    break;
+  }
+  case Kind::ARRAY_ASSIGN:
+  {
+    auto node = dynamic_cast<ArrayAssignNode *>(&root);
+    if (node->index)
+      fill_symbol_table(*node->index);
+    if (node->value)
+      fill_symbol_table(*node->value);
+    break;
+  }
+  case Kind::ARRAY_ACCESS:
+  {
+    auto node = dynamic_cast<ArrayAccessNode *>(&root);
+    if (node->array)
+      fill_symbol_table(*node->array);
+    if (node->index)
+      fill_symbol_table(*node->index);
+    break;
+  }
+  case Kind::BIN_OP:
+  {
+    auto node = dynamic_cast<BinOpNode *>(&root);
+    if (node->left)
+      fill_symbol_table(*node->left);
+    if (node->right)
+      fill_symbol_table(*node->right);
+    break;
+  }
+  case Kind::METHOD_CALL:
+  {
+    auto node = dynamic_cast<MethodCallNode *>(&root);
+    if (node->obj)
+      fill_symbol_table(*node->obj);
+    std::for_each(node->args.begin(), node->args.end(), [&](const auto &arg)
+                  { fill_symbol_table(*arg); });
+    break;
+  }
+  case Kind::LENGTH:
+  {
+    auto node = dynamic_cast<LengthNode *>(&root);
+    if (node->obj)
+      fill_symbol_table(*node->obj);
+    break;
+  }
+  case Kind::NOT:
+  {
+    auto node = dynamic_cast<NotNode *>(&root);
+    if (node->expr)
+      fill_symbol_table(*node->expr);
+    break;
+  }
+  case Kind::NEW_ARRAY:
+  {
+    auto node = dynamic_cast<NewArrayNode *>(&root);
+    if (node->size)
+      fill_symbol_table(*node->size);
+    break;
+  }
   default:
     break;
   }

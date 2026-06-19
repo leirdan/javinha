@@ -2,55 +2,75 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <ostream>
+#include <iostream>
 #include "types.hpp"
+#include "utils.hpp"
 
 namespace jc
 {
+  enum class SymbolCategory : u8
+  {
+    CLASS,
+    METHOD,
+    LOCAL,
+    PARAM,
+  };
+
   struct Symbol
   {
-    std::vector<i8> scopes{};
     std::string name;
-    std::string type;
+    std::optional<std::string> type;
     u32 line;
+    SymbolCategory category;
+    i8 scope;
     Symbol() {}
-    Symbol(std::string id, std::string type, u32 line = 0, i8 scope = -1)
+    Symbol(std::string id, SymbolCategory category, u32 line = 0, i8 scope = -1)
+    {
+      this->name = id;
+      this->type = std::nullopt;
+      this->category = category;
+      this->line = line;
+      this->scope = scope;
+    }
+    Symbol(std::string id, std::string type, SymbolCategory category, u32 line = 0, i8 scope = -1)
     {
       this->name = id;
       this->type = type;
+      this->category = category;
       this->line = line;
-      if (std::find(scopes.begin(), scopes.end(), scope) == scopes.end() && scope != -1)
-        scopes.push_back(scope);
+      this->scope = scope;
     }
   };
 
   class SymbolTable
   {
   private:
-    std::unordered_map<std::string, Symbol> table;
+    std::unordered_map<std::string, std::vector<Symbol>> table; // filosofia - o símbolo mais à esquerda tem um escopo mais restrito que qualquer outro à direita
 
   public:
-    void insert(std::string id, u32 line = 0, i8 scope = -1)
+    void insert(std::string id, SymbolCategory category = SymbolCategory::LOCAL, u8 scope = -1, u32 line = 0)
     {
       if (table.find(id) == table.end())
       {
-        table[id] = Symbol(id, "", line, scope);
+        table[id] = {};
       }
+      table[id].emplace_back(Symbol(id, category, line, scope));
     }
 
-    void add_scope_to(std::string id, u8 scope)
+    void insert(std::string id, std::string type, SymbolCategory category = SymbolCategory::LOCAL, i8 scope = -1, u32 line = 0)
     {
-      if (table.find(id) != table.end())
+      if (table.find(id) == table.end())
       {
-        auto &scopes = table[id].scopes;
-        if (std::find(scopes.begin(), scopes.end(), scope) == scopes.end())
-          scopes.push_back(scope);
+        table[id] = {};
       }
+      table[id].emplace_back(Symbol(id, type, category, line, scope));
     }
 
     const Symbol &get(const std::string &id)
     {
       if (exists(id))
-        return table.at(id);
+        return table.at(id).front(); // TODO
     }
 
     bool exists(const std::string &id) const
@@ -58,25 +78,34 @@ namespace jc
       return table.find(id) != table.end();
     }
 
-    const std::unordered_map<std::string, Symbol> &get_all() const
+    const std::unordered_map<std::string, std::vector<Symbol>> &get_all() const
     {
       return table;
     }
 
-    void print() const
+    void print(std::ostream &stream = std::cout) const
     {
       for (const auto &[k, v] : table)
       {
-        std::stringstream scopes_str;
-        std::for_each(v.scopes.begin(), v.scopes.end(), [&scopes_str](const u8 &s)
-                      { scopes_str << (int)s << ", "; });
-        std::cout
-            << v.name
-            << " | tipo: " << v.type
-            << " | escopos: (" << scopes_str.str() << ")"
-            << " | linha: " << v.line << "\n";
+        std::stringstream str;
+        std::for_each(v.begin(), v.end(), [&str](const Symbol &s)
+                      {
+                        str << "(" << s.name << ", scope " << (int)s.scope << ", category: " << to_string(s.category);
+                        if (s.type.has_value())
+                        {
+                          str << ", type '" << s.type.value() << "')\n";
+                        }
+                        else
+                        {
+                          str << ")\n";
+                        }
+                        // << v.front().name
+                        // << " | tipo: " << v.type
+                        // << " | escopos: (" << scopes_str.str() << ")"
+                        // << " | linha: " << v.line << "\n";
+                      });
+        stream << str.str();
       }
-    }
+    };
   };
-
 }

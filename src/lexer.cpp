@@ -123,7 +123,6 @@ namespace jc
             return {TokenType::KEYWORD, text, line, start_col};
         }
 
-        symbols.insert(text, line);
         return {TokenType::IDENTIFIER, text, line, start_col};
     }
 

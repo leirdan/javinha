@@ -53,6 +53,7 @@ namespace jc
       CLASS,
       INT,
       INT_ARRAY,
+      STRING_ARRAY,
     };
 
     enum class BinOp : u8
