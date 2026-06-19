@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
   CompilerConfig config;
   if (!config.parse(argc, argv))
   {
-    std::cerr << "usage: ./javinha input.ling output.txt [--tokens]\n";
+    std::cerr << "usage: ./javinha input.ling output.txt [--flag]\n";
     return EXIT_FAILURE;
   }
 
@@ -42,6 +42,14 @@ int main(int argc, char *argv[])
   if (std::holds_alternative<std::vector<std::string>>(lexer_result))
   {
     auto &errors = std::get<std::vector<std::string>>(lexer_result);
+
+    if (config.firstLexicalError)
+    {
+      std::cerr << errors.front();
+      delete lexer;
+      return EXIT_FAILURE;
+    }
+
     for (const auto &error : errors)
     {
       std::cerr << error;
