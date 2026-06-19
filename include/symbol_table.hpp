@@ -23,89 +23,152 @@ namespace jc
     std::optional<std::string> type;
     u32 line;
     SymbolCategory category;
-    i8 scope;
     Symbol() {}
-    Symbol(std::string id, SymbolCategory category, u32 line = 0, i8 scope = -1)
+    Symbol(std::string id, SymbolCategory category, u32 line = 0)
     {
       this->name = id;
       this->type = std::nullopt;
       this->category = category;
       this->line = line;
-      this->scope = scope;
     }
-    Symbol(std::string id, std::string type, SymbolCategory category, u32 line = 0, i8 scope = -1)
+    Symbol(std::string id, std::string type, SymbolCategory category, u32 line = 0)
     {
       this->name = id;
       this->type = type;
       this->category = category;
       this->line = line;
-      this->scope = scope;
+    }
+  };
+
+  class Scope
+  {
+  public:
+    std::string name;
+    std::weak_ptr<Scope> parent; // evitar ref circular
+    std::optional<std::string> parent_class;
+    std::unordered_map<std::string, Symbol> symbols;
+    std::vector<std::shared_ptr<Scope>> children;
+
+    Scope(std::string name, std::shared_ptr<Scope> parent = nullptr)
+        : name(name), parent(parent), parent_class(std::nullopt) {}
+
+    bool insert(const Symbol &sym)
+    {
+      if (symbols.contains(sym.name))
+        return false;
+
+      symbols[sym.name] = sym;
+      return true;
+    }
+
+    void print(std::ostream &stream, int depth) const
+    {
+      std::string indent(depth * 2, ' ');
+
+      stream << indent << "- scope: " << name;
+      if (parent_class)
+        stream << " (extends " << *parent_class << ")";
+      stream << "\n";
+
+      for (const auto &[id, sym] : symbols)
+      {
+        stream << indent << "   - [" << to_string(sym.category) << "] " << id;
+        if (sym.type)
+          stream << ": " << *sym.type;
+        stream << "\n";
+      }
+
+      for (const auto &child : children)
+      {
+        child->print(stream, depth + 1);
+      }
     }
   };
 
   class SymbolTable
   {
   private:
-    std::unordered_map<std::string, std::vector<Symbol>> table; // filosofia - o símbolo mais à esquerda tem um escopo mais restrito que qualquer outro à direita
+    std::shared_ptr<Scope> root;
+    std::shared_ptr<Scope> current_scope;
+    std::unordered_map<std::string, std::shared_ptr<Scope>> class_scopes; // transitar entre classes por conta da herança
 
   public:
-    void insert(std::string id, SymbolCategory category = SymbolCategory::LOCAL, u8 scope = -1, u32 line = 0)
+    SymbolTable()
     {
-      if (table.find(id) == table.end())
+      root = std::make_shared<Scope>("global");
+      current_scope = root;
+    }
+
+    void enter_scope(const std::string &scope_name)
+    {
+      auto new_scope = std::make_shared<Scope>(scope_name, current_scope);
+      current_scope->children.push_back(new_scope);
+      current_scope = new_scope;
+    }
+
+    void enter_class_scope(const std::string &class_name, const std::optional<std::string> &extends_class = std::nullopt)
+    {
+      auto new_scope = std::make_shared<Scope>(class_name, current_scope);
+      new_scope->parent_class = extends_class;
+      root->children.push_back(new_scope);
+      class_scopes[class_name] = new_scope;
+      current_scope = new_scope;
+    }
+
+    void exit_scope()
+    {
+      if (current_scope->parent.lock() != nullptr)
+        current_scope = current_scope->parent.lock();
+      else
+        current_scope = root;
+    }
+
+    bool insert(std::string id, SymbolCategory category = SymbolCategory::LOCAL, u32 line = 0)
+    {
+      return current_scope->insert(Symbol(id, category, line));
+    }
+
+    bool insert(const std::string &id, const std::string &type, SymbolCategory category, u32 line = 0)
+    {
+      return current_scope->insert(Symbol(id, type, category, line));
+    }
+
+    // funcao essencial pra analise semantica verificar variaveis nao declaradas por ex.!
+    std::optional<Symbol> lookup(const std::string &id)
+    {
+      auto scope = current_scope;
+      while (scope != nullptr)
       {
-        table[id] = {};
+        if (scope->symbols.contains(id))
+          return scope->symbols[id];
+
+        if (scope->parent_class.has_value())
+        {
+          auto parent = scope->parent_class.value();
+          while (!parent.empty() && class_scopes.contains(parent))
+          {
+            auto base_class_scope = class_scopes[parent];
+            if (base_class_scope->symbols.contains(id))
+              return base_class_scope->symbols[id];
+            parent = base_class_scope->parent_class.value_or("");
+          }
+        }
+
+        scope = scope->parent.expired() ? nullptr : scope->parent.lock();
       }
-      table[id].emplace_back(Symbol(id, category, line, scope));
+      return std::nullopt;
     }
 
-    void insert(std::string id, std::string type, SymbolCategory category = SymbolCategory::LOCAL, i8 scope = -1, u32 line = 0)
+    bool exists(const std::string &id)
     {
-      if (table.find(id) == table.end())
-      {
-        table[id] = {};
-      }
-      table[id].emplace_back(Symbol(id, type, category, line, scope));
-    }
-
-    const Symbol &get(const std::string &id)
-    {
-      if (exists(id))
-        return table.at(id).front(); // TODO
-    }
-
-    bool exists(const std::string &id) const
-    {
-      return table.find(id) != table.end();
-    }
-
-    const std::unordered_map<std::string, std::vector<Symbol>> &get_all() const
-    {
-      return table;
+      return lookup(id).has_value();
     }
 
     void print(std::ostream &stream = std::cout) const
     {
-      for (const auto &[k, v] : table)
-      {
-        std::stringstream str;
-        std::for_each(v.begin(), v.end(), [&str](const Symbol &s)
-                      {
-                        str << "(" << s.name << ", scope " << (int)s.scope << ", category: " << to_string(s.category);
-                        if (s.type.has_value())
-                        {
-                          str << ", type '" << s.type.value() << "')\n";
-                        }
-                        else
-                        {
-                          str << ")\n";
-                        }
-                        // << v.front().name
-                        // << " | tipo: " << v.type
-                        // << " | escopos: (" << scopes_str.str() << ")"
-                        // << " | linha: " << v.line << "\n";
-                      });
-        stream << str.str();
-      }
-    };
+      stream << "[SYMBOL TABLE]\n";
+      root->print(stream, 0);
+    }
   };
+
 }

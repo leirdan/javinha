@@ -24,8 +24,6 @@ namespace jc
     u32 line = 1;
     u32 col = 1;
 
-    SymbolTable symbols;
-
     /**
      * \brief Returns the current character without consuming it.
      *
@@ -106,16 +104,6 @@ namespace jc
      * @return Vector containing all tokens extracted from the input.
      */
     std::variant<std::vector<Token>, std::vector<std::string>> tokenize();
-
-    /**
-     * \brief Transfers ownership of the symbol table.
-     *
-     * This method allows moving the internally built symbol table
-     * to another component without copying.
-     *
-     * @return Rvalue reference to the symbol table.
-     */
-    [[nodiscard]] SymbolTable &&move_symbols();
   };
 
 } // namespace jc

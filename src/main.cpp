@@ -51,7 +51,6 @@ int main(int argc, char *argv[])
   }
 
   std::vector<Token> tokens = std::get<std::vector<Token>>(lexer_result);
-  SymbolTable symbols = lexer->move_symbols();
 
   delete lexer;
 
@@ -70,14 +69,11 @@ int main(int argc, char *argv[])
              << ") [linha " << t.line << "]\n";
   }
 
-  o_stream << "\nSYMBOL TABLE:\n";
-  symbols.print(o_stream);
-
   o_stream.close();
 
   std::cout << "Analise léxica concluida com sucesso.\n";
 
-  jc::parser::Parser parser(std::move(symbols));
+  jc::parser::Parser parser;
   bool res = parser.earley_parse(std::move(tokens));
   if (res && !parser.has_errors())
   {

@@ -218,11 +218,10 @@ namespace jc
 
       void print_tree(const PTree &node, int indent = 0);
 
-      u8 scope_id = 0;
       void fill_symbol_table(ast::Node &root);
 
     public:
-      Parser(const SymbolTable &&symbols) : symbols(symbols) {};
+      Parser() {};
 
       /**
        * \brief Parses context-free grammars using the Earley parsing algorithm.

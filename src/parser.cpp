@@ -179,14 +179,13 @@ void Parser::fill_symbol_table(Node &root)
   {
     auto node = dynamic_cast<ClassNode *>(&root);
     symbols.insert(node->name, SymbolCategory::CLASS, 0);
-    if (node->parent.has_value() && symbols.exists(node->parent.value())) // tratando de adicionar escopos herdados !
-    {
-    }
-    scope_id++;
+    symbols.enter_class_scope(node->name, node->parent);
     std::for_each(node->fields.begin(), node->fields.end(), [&](const auto &f)
                   { fill_symbol_table(*f); });
     std::for_each(node->methods.begin(), node->methods.end(), [&](const auto &m)
                   { fill_symbol_table(*m); });
+
+    symbols.exit_scope();
     break;
   }
 
@@ -194,19 +193,19 @@ void Parser::fill_symbol_table(Node &root)
   {
     auto node = dynamic_cast<MainClassNode *>(&root);
     symbols.insert(node->name, SymbolCategory::CLASS, 0);
-    scope_id++;
+    symbols.enter_class_scope(node->name);
     fill_symbol_table(*node->main_method);
+    symbols.exit_scope();
     break;
   }
   case Kind::MAIN_METHOD:
   {
     auto node = dynamic_cast<MainMethodNode *>(&root);
-    symbols.insert(node->name, node->return_type, SymbolCategory::METHOD, scope_id++);
-    ParamNode param_node;
-    param_node.name = node->param;
-    param_node.type = std::make_unique<TypeNode>(TypeKind::STRING_ARRAY, "String[]");
-    fill_symbol_table(param_node);
+    symbols.insert(node->name, node->return_type, SymbolCategory::METHOD, 0);
+    symbols.enter_scope(node->name);
+    symbols.insert(node->param, "String[]", SymbolCategory::PARAM, 0);
     fill_symbol_table(*node->body);
+    symbols.exit_scope();
     break;
   }
   case Kind::METHOD:
@@ -215,22 +214,17 @@ void Parser::fill_symbol_table(Node &root)
     if (node->return_type)
     {
       auto type = dynamic_cast<TypeNode *>(&(*node->return_type));
-      symbols.insert(node->name, type->name, SymbolCategory::METHOD, scope_id++);
+      symbols.insert(node->name, type->name, SymbolCategory::METHOD, 0);
+      symbols.enter_scope(node->name);
       std::for_each(node->params.begin(), node->params.end(), [&](const auto &param)
                     { fill_symbol_table(*param); });
       std::for_each(node->locals.begin(), node->locals.end(), [&](const auto &var)
                     { fill_symbol_table(*var); });
       if (node->body)
         fill_symbol_table(*node->body);
+
+      symbols.exit_scope();
     }
-    break;
-  }
-  case Kind::BLOCK:
-  {
-    auto node = dynamic_cast<BlockNode *>(&root);
-    scope_id++;
-    std::for_each(node->stmt.begin(), node->stmt.end(), [&](const auto &stmt)
-                  { fill_symbol_table(*stmt); });
     break;
   }
   case Kind::VAR_DECL:
@@ -239,7 +233,7 @@ void Parser::fill_symbol_table(Node &root)
     if (node->type)
     {
       auto type = dynamic_cast<TypeNode *>(&(*node->type));
-      symbols.insert(node->name, type->name, SymbolCategory::LOCAL, scope_id);
+      symbols.insert(node->name, type->name, SymbolCategory::LOCAL, 0);
     }
     break;
   }
@@ -247,7 +241,14 @@ void Parser::fill_symbol_table(Node &root)
   {
     auto node = dynamic_cast<ParamNode *>(&root);
     auto type = dynamic_cast<TypeNode *>(&(*node->type));
-    symbols.insert(node->name, type->name, SymbolCategory::PARAM, scope_id);
+    symbols.insert(node->name, type->name, SymbolCategory::PARAM, 0);
+    break;
+  }
+  case Kind::BLOCK:
+  {
+    auto node = dynamic_cast<BlockNode *>(&root);
+    std::for_each(node->stmt.begin(), node->stmt.end(), [&](const auto &stmt)
+                  { fill_symbol_table(*stmt); });
     break;
   }
   case Kind::IF:
@@ -277,7 +278,7 @@ void Parser::fill_symbol_table(Node &root)
       fill_symbol_table(*node->expr);
     break;
   }
-  case Kind::ASSIGN: // dá pra detectar na semântica se tem variável não declarada..
+  case Kind::ASSIGN:
   {
     auto node = dynamic_cast<AssignNode *>(&root);
     if (node->value)
@@ -345,7 +346,6 @@ void Parser::fill_symbol_table(Node &root)
     break;
   }
 }
-
 bool Parser::predict(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 it)
 {
   bool added = false;
