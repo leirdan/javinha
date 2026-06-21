@@ -24,7 +24,7 @@ const std::optional<grammar::GSymbol> State::next_symbol() const
                          : std::nullopt;
 }
 
-bool Parser::earley_parse(const std::vector<Token> &&tokens)
+bool Parser::earley_parse(const std::vector<Token> &&tokens, bool print_ast)
 {
   u64 n = tokens.size();
   std::vector<StateSet> chart(n + 1);
@@ -153,11 +153,14 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
 
     auto tree = parse_tree(tokens, chart, reversed_chart);
     print_tree(tree);
-    auto ast = ast::AST();
-    ast_root = ast.create(tree);
-    log::ast(ast_root);
-    fill_symbol_table(*ast_root);
-    log::symbol_table(symbols);
+    if (print_ast)
+    {
+      auto ast = ast::AST();
+      ast_root = ast.create(tree);
+      log::ast(ast_root);
+      fill_symbol_table(*ast_root);
+      log::symbol_table(symbols);
+    }
   }
 
   return this->has_ended(chart, n);
