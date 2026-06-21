@@ -58,6 +58,38 @@ void jc::log::parser_errors(const std::vector<jc::parser::ParserError> &errors, 
   }
 }
 
+void jc::log::parse_tree(const jc::parser::PTree &root, int indent, std::ostream &stream)
+{
+  if (config.debug)
+  {
+    stream << "\n[ÁRVORE SINTÁTICA CONCRETA]\n";
+    std::function<void(const jc::parser::PTree &, int)> parse_rec =
+        [&](const jc::parser::PTree &current_node, int current_indent)
+    {
+      std::string pad(current_indent * 2, ' ');
+
+      std::visit([&](auto &&val)
+                 {
+        using T = std::decay_t<decltype(val)>;
+
+        if constexpr (std::is_same_v<T, jc::parser::PTNode>)
+        {
+          stream << std::format("{} [{}]\n", pad, jc::to_string(val.rule));
+          for (const auto &child : val.children) {
+            parse_rec(*child, current_indent + 1);
+          }
+        }
+        else if constexpr (std::is_same_v<T, std::optional<jc::Token>>)
+        {
+          if (val.has_value())
+            stream << std::format("{}\"{}\"\n", pad, val->value);
+        } }, current_node.value);
+    };
+
+    parse_rec(root, indent);
+  }
+}
+
 std::string jc::to_string(jc::TokenType t)
 {
   switch (t)

@@ -3,6 +3,7 @@
 #include "types.hpp"
 #include <memory>
 #include <ostream>
+#include <variant>
 
 inline CompilerConfig config;
 
@@ -55,6 +56,7 @@ namespace jc
     void lexer_errors(const std::vector<std::string> &errors, std::ostream &stream = std::cout);
     void parser_errors(const std::vector<jc::parser::ParserError> &errors, std::ostream &stream = std::cout);
     void tokens(const std::vector<jc::Token> &tokens, std::ostream &stream = std::cout);
+    void parse_tree(const jc::parser::PTree &root, int indent = 0, std::ostream &stream = std::cout);
     void ast(const jc::ast::NodePtr &node, std::ostream &stream = std::cout);
     void symbol_table(const jc::SymbolTable &table, std::ostream &stream = std::cout);
   }

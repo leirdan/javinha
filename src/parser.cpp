@@ -152,12 +152,10 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens)
     }
 
     auto tree = parse_tree(tokens, chart, reversed_chart);
-    print_tree(tree);
+    log::parse_tree(tree);
     auto ast = ast::AST();
     ast_root = ast.create(tree);
-    // log::ast(ast_root);
     fill_symbol_table(*ast_root);
-    // log::symbol_table(symbols);
   }
 
   return this->has_ended(chart, n);
@@ -620,14 +618,14 @@ void Parser::print_tree(const PTree &node, int indent)
 
     if constexpr (std::is_same_v<T, PTNode>)
     {
-      std::cout << pad << "[" << jc::to_string(val.rule) << "]\n";
+      log::debug(std::format("{} [{}]", pad, jc::to_string(val.rule)));
       for (const auto &child : val.children)
         print_tree(*child, indent + 1);
     }
     else if constexpr (std::is_same_v<T, std::optional<Token>>)
     {
       if (val.has_value())
-        std::cout << pad << "\"" << val->value << "\"\n";
+        log::debug(std::format("{}\"{}\"", pad, val->value));
     } }, node.value);
 }
 
