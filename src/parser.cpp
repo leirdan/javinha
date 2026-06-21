@@ -24,7 +24,7 @@ const std::optional<grammar::GSymbol> State::next_symbol() const
                          : std::nullopt;
 }
 
-bool Parser::earley_parse(const std::vector<Token> &&tokens, bool print_ast)
+bool Parser::earley_parse(const std::vector<Token> &&tokens)
 {
   u64 n = tokens.size();
   std::vector<StateSet> chart(n + 1);
@@ -153,14 +153,11 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens, bool print_ast)
 
     auto tree = parse_tree(tokens, chart, reversed_chart);
     print_tree(tree);
-    if (print_ast)
-    {
-      auto ast = ast::AST();
-      ast_root = ast.create(tree);
-      log::ast(ast_root);
-      fill_symbol_table(*ast_root);
-      log::symbol_table(symbols);
-    }
+    auto ast = ast::AST();
+    ast_root = ast.create(tree);
+    // log::ast(ast_root);
+    fill_symbol_table(*ast_root);
+    // log::symbol_table(symbols);
   }
 
   return this->has_ended(chart, n);
@@ -419,13 +416,16 @@ bool Parser::complete(std::vector<StateSet> &chart, const State &state, u64 it)
 
 bool Parser::has_ended(const std::vector<StateSet> &chart, u64 last)
 {
-  log::debug("Verificação do último estado do Parser.");
   for (const auto &s : chart.at(last))
   {
     log::debug(s.to_string() + "\n");
     if (s.lhs == start_symbol && s.is_complete() && s.start == 0)
+    {
+      log::debug("Parser encontrou um caminho!");
       return true;
+    }
   }
+  log::debug("Parser não encontrou um caminho...");
   return false;
 }
 
@@ -481,7 +481,7 @@ std::vector<std::pair<u64, DFSEdge>> Parser::top_list(
     return (depth == (i64)bottom) && (current_start == finish);
   };
 
-  auto child = [](i64 depth, const DFSEdge &edge) -> u64
+  auto child = [](i64 _depth, const DFSEdge &edge) -> u64
   {
     return edge.finish;
   };

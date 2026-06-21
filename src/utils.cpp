@@ -6,15 +6,21 @@
 
 void jc::log::ast(const jc::ast::NodePtr &node, std::ostream &stream)
 {
-  // #ifdef AST
-  auto *prog = static_cast<jc::ast::ProgramNode *>(node.get());
-  prog->print();
-  // #endif
+  if (config.printAst)
+  {
+    stream << "\n[ÁRVORE SINTÁTICA ABSTRATA]\n";
+    auto *prog = static_cast<jc::ast::ProgramNode *>(node.get());
+    prog->print();
+  }
 }
 
 void jc::log::symbol_table(const jc::SymbolTable &table, std::ostream &stream)
 {
-  table.print();
+  if (config.printSymbolTable)
+  {
+    stream << "\n[TABELA DE SÍMBOLOS]\n";
+    table.print();
+  }
 }
 
 void jc::log::lexer_errors(const std::vector<std::string> &errors, std::ostream &stream)
@@ -34,7 +40,7 @@ void jc::log::tokens(const std::vector<jc::Token> &tokens, std::ostream &stream)
 {
   if (config.printTokens)
   {
-    stream << "TOKENS:\n";
+    stream << "\n[TOKENS]\n";
     for (const auto &t : tokens)
     {
       stream << "(" << jc::to_string(t.type) << ", " << t.value
@@ -45,12 +51,11 @@ void jc::log::tokens(const std::vector<jc::Token> &tokens, std::ostream &stream)
 
 void jc::log::parser_errors(const std::vector<jc::parser::ParserError> &errors, std::ostream &stream)
 {
-  stream << "\n===== ERROS SINTÁTICOS ENCONTRADOS =====\n";
+  stream << "\n[ERROS SINTÁTICOS]\n";
   for (const auto &error : errors)
   {
     stream << error.to_string() << "\n";
   }
-  stream << "=========================================\n";
 }
 
 std::string jc::to_string(jc::TokenType t)

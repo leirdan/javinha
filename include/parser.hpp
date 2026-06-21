@@ -222,6 +222,7 @@ namespace jc
 
     public:
       Parser() {};
+      virtual ~Parser() = default; // TODO: se grammar não será mais necessário nas outras etapas poderíamos destruir...
 
       /**
        * \brief Parses context-free grammars using the Earley parsing algorithm.
@@ -233,7 +234,19 @@ namespace jc
        *
        * \return Boolean indicating whether the program is valid.
        */
-      bool earley_parse(const std::vector<Token> &&tokens, bool print_ast);
+      bool earley_parse(const std::vector<Token> &&tokens);
+
+      // Irreversível
+      ast::NodePtr release_ast()
+      {
+        return std::move(ast_root);
+      }
+
+      // Irreversível
+      SymbolTable &&release_symbol_table()
+      {
+        return std::move(symbols);
+      }
 
       const std::vector<ParserError> &get_errors() const
       {

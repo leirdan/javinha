@@ -50,28 +50,22 @@ int main(int argc, char *argv[])
   delete lexer;
   log::tokens(tokens);
 
-  jc::parser::Parser parser;
-  bool res = parser.earley_parse(std::move(tokens), config.printAst);
-  if (res && !parser.has_errors())
-    std::cout << "Programa sintaticamente válido. \n";
-  else if (parser.has_errors())
+  auto *parser = new parser::Parser();
+  bool res = parser->earley_parse(std::move(tokens));
+
+  if (parser->has_errors())
   {
-    std::cout << "Programa sintaticamente incorreto. \n";
-    log::parser_errors(parser.get_errors());
+    std::cout << "Programa sintaticamente inválido!\n";
+    log::parser_errors(parser->get_errors());
     return EXIT_FAILURE;
   }
 
-  if (config.printSymbolTable)
-  {
-    // std::cout << "\nSYMBOL TABLE:\n";
-    // for (const auto &[k, v] : parser.get_all())
-    // {
-    //   std::cout << v.name
-    //             << " | categoria: " << v.category
-    //             << " | tipo: " << v.type
-    //             << " | linha: " << v.line << "\n";
-    // }
-  }
+  ast::NodePtr ast = parser->release_ast();
+  SymbolTable table = parser->release_symbol_table();
+  delete parser;
+
+  log::ast(ast);
+  log::symbol_table(table);
 
   return 0;
 }

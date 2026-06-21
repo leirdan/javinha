@@ -166,7 +166,6 @@ namespace jc
 
     void print(std::ostream &stream = std::cout) const
     {
-      stream << "[SYMBOL TABLE]\n";
       root->print(stream, 0);
     }
   };
