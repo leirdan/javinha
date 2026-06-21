@@ -1,7 +1,10 @@
+#pragma once
+
 #include <argparse/argparse.hpp>
 #include <string>
 
-class CompilerConfig {
+class CompilerConfig
+{
 public:
     std::string inputFile;
     std::string outputFile;
@@ -10,7 +13,8 @@ public:
     bool printAst = false;
     bool printSymbolTable = false;
 
-    bool parse(int argc, char* argv[]) {
+    bool parse(int argc, char *argv[])
+    {
         argparse::ArgumentParser program("javinha");
 
         // arquivos de entrada e saída
@@ -34,7 +38,8 @@ public:
             .help("Printa a table de símbolos")
             .flag();
 
-        try {
+        try
+        {
             program.parse_args(argc, argv);
             inputFile = program.get<std::string>("input_file");
             outputFile = program.get<std::string>("output_file");
@@ -43,7 +48,9 @@ public:
             printAst = program.get<bool>("--ast");
             printSymbolTable = program.get<bool>("--symbol_table");
             return true;
-        } catch (const std::exception& err) {
+        }
+        catch (const std::exception &err)
+        {
             return false;
         }
     }
