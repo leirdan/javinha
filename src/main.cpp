@@ -13,7 +13,6 @@ using namespace jc;
 
 int main(int argc, char *argv[])
 {
-  CompilerConfig config;
   if (!config.parse(argc, argv))
   {
     std::cerr << "usage: ./javinha input.ling output.txt [--flag]\n";
@@ -42,70 +41,31 @@ int main(int argc, char *argv[])
   if (std::holds_alternative<std::vector<std::string>>(lexer_result))
   {
     auto &errors = std::get<std::vector<std::string>>(lexer_result);
-
-    if (config.firstLexicalError)
-    {
-      std::cerr << errors.front();
-      delete lexer;
-      return EXIT_FAILURE;
-    }
-
-    for (const auto &error : errors)
-    {
-      std::cerr << error;
-    }
-    delete lexer;
+    log::lexer_errors(errors);
     return EXIT_FAILURE;
   }
 
   std::vector<Token> tokens = std::get<std::vector<Token>>(lexer_result);
-  SymbolTable symbols = lexer->move_symbols();
 
   delete lexer;
+  log::tokens(tokens);
 
-  if (config.printTokens)
-  {
-    std::cout << "TOKENS:\n";
-    for (const auto &t : tokens)
-    {
-      std::cout << "(" << jc::to_string(t.type) << ", " << t.value
-                << ") [linha " << t.line << "]\n";
-    }
-    return EXIT_SUCCESS;
-  }
+  auto *parser = new parser::Parser();
+  bool res = parser->earley_parse(std::move(tokens));
 
-  jc::parser::Parser parser(std::move(symbols));
-  bool res = parser.earley_parse(std::move(tokens), config.printAst);
-  if (res && !parser.has_errors())
+  if (parser->has_errors())
   {
-    std::cout << "Programa sintaticamente válido. \n";
-  }
-  else if (parser.has_errors())
-  {
-    std::cout << "Programa sintaticamente incorreto. \n";
+    std::cout << "Programa sintaticamente inválido!\n";
+    log::parser_errors(parser->get_errors());
+    return EXIT_FAILURE;
   }
 
-  if (parser.has_errors())
-  {
-    std::cout << "\n===== ERROS SINTÁTICOS ENCONTRADOS =====\n";
-    for (const auto &error : parser.get_errors())
-    {
-      std::cout << error.to_string() << "\n";
-    }
-    std::cout << "=========================================\n";
-  }
+  ast::NodePtr ast = parser->release_ast();
+  SymbolTable table = parser->release_symbol_table();
+  delete parser;
 
-  if (config.printSymbolTable)
-  {
-    std::cout << "\nSYMBOL TABLE:\n";
-    for (const auto &[k, v] : symbols.get_all())
-    {
-      std::cout << v.name
-                << " | categoria: " << v.category
-                << " | tipo: " << v.type
-                << " | linha: " << v.line << "\n";
-    }
-  }
+  log::ast(ast);
+  log::symbol_table(table);
 
   return 0;
 }

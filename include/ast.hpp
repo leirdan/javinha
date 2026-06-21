@@ -6,8 +6,8 @@
 #include <vector>
 #include <functional>
 #include "types.hpp"
-#include "parser.hpp"
 #include "utils.hpp"
+#include "parser.hpp"
 
 namespace jc
 {
@@ -53,6 +53,7 @@ namespace jc
       CLASS,
       INT,
       INT_ARRAY,
+      STRING_ARRAY,
     };
 
     enum class BinOp : u8
@@ -592,6 +593,8 @@ namespace jc
     private:
       NodePtr root;
 
+      bool has_any_member(const std::vector<std::unique_ptr<PTree>> &children);
+
       NodePtr prog(const PTNode &root);
       NodePtr main_c(const PTNode &root);
       std::vector<NodePtr> def_cl(const PTNode &root);
@@ -614,26 +617,6 @@ namespace jc
       NodePtr obj_met(const PTNode &root, NodePtr left);
       NodePtr obj_atom(const PTNode &root);
       std::vector<NodePtr> list_exp(const PTNode &root);
-
-      bool has_any_member(const std::vector<std::unique_ptr<PTree>> &children)
-      {
-        for (const auto &child : children)
-        {
-          if (std::holds_alternative<std::optional<Token>>(child->value))
-          {
-            const auto &token_opt = std::get<std::optional<Token>>(child->value);
-            if (token_opt.has_value())
-              return true;
-          }
-          else
-          {
-            const auto &rule = std::get<PTNode>(child->value);
-            return has_any_member(rule.children);
-          }
-        }
-
-        return false;
-      }
 
     public:
       NodePtr create(const PTree &root);

@@ -22,6 +22,26 @@ NodePtr AST::create(const PTree &root)
   return nullptr;
 }
 
+bool AST::has_any_member(const std::vector<std::unique_ptr<PTree>> &children)
+{
+  for (const auto &child : children)
+  {
+    if (std::holds_alternative<std::optional<Token>>(child->value))
+    {
+      const auto &token_opt = std::get<std::optional<Token>>(child->value);
+      if (token_opt.has_value())
+        return true;
+    }
+    else
+    {
+      const auto &rule = std::get<PTNode>(child->value);
+      return has_any_member(rule.children);
+    }
+  }
+
+  return false;
+}
+
 NodePtr AST::prog(const PTNode &root)
 {
   if (root.rule != NT::PROG)
@@ -238,13 +258,13 @@ NodePtr AST::type(const PTNode &root)
         if (token.type == TokenType::KEYWORD && token.value == "int")
         {
           if (root.children.size() == 3)
-            return std::make_unique<TypeNode>(TypeKind::INT_ARRAY);
+            return std::make_unique<TypeNode>(TypeKind::INT_ARRAY, "int[]");
           else if (root.children.size() == 1)
-            return std::make_unique<TypeNode>(TypeKind::INT);
+            return std::make_unique<TypeNode>(TypeKind::INT, "int");
         }
         else if (token.type == TokenType::KEYWORD && token.value == "boolean")
         {
-          return std::make_unique<TypeNode>(TypeKind::BOOLEAN);
+          return std::make_unique<TypeNode>(TypeKind::BOOLEAN, "boolean");
         }
         else if (token.type == TokenType::IDENTIFIER)
         {

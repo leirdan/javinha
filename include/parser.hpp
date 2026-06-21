@@ -8,6 +8,7 @@
 #include "grammar.hpp"
 #include "lexer.hpp"
 #include "utils.hpp"
+#include "ast.hpp"
 
 namespace jc
 {
@@ -132,6 +133,7 @@ namespace jc
       std::vector<ParserError> errors;
       // Avoiding type "grammar::grammar" everytime inside the Parser...
       const Grammar *grammar = &grammar::grammar;
+      ast::NodePtr ast_root;
 
       void add_error(u64 pos, u32 line, const std::string &msg, const std::string &found, const std::string &expected)
       {
@@ -216,8 +218,11 @@ namespace jc
 
       void print_tree(const PTree &node, int indent = 0);
 
+      void fill_symbol_table(ast::Node &root);
+
     public:
-      Parser(const SymbolTable &&symbols) : symbols(symbols) {};
+      Parser() {};
+      virtual ~Parser() = default; // TODO: se grammar não será mais necessário nas outras etapas poderíamos destruir...
 
       /**
        * \brief Parses context-free grammars using the Earley parsing algorithm.
@@ -229,7 +234,19 @@ namespace jc
        *
        * \return Boolean indicating whether the program is valid.
        */
-      bool earley_parse(const std::vector<Token> &&tokens, bool print_ast);
+      bool earley_parse(const std::vector<Token> &&tokens);
+
+      // Irreversível
+      ast::NodePtr release_ast()
+      {
+        return std::move(ast_root);
+      }
+
+      // Irreversível
+      SymbolTable &&release_symbol_table()
+      {
+        return std::move(symbols);
+      }
 
       const std::vector<ParserError> &get_errors() const
       {

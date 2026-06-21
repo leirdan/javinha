@@ -92,19 +92,6 @@ namespace jc
         return false;
     }
 
-    std::string suggest(const std::string &wrong,
-                        const SymbolTable &symbols)
-    {
-        for (const auto &[k, v] : symbols.get_all())
-        {
-            if (!k.empty() && !wrong.empty() && k[0] == wrong[0])
-            {
-                return k;
-            }
-        }
-        return "";
-    }
-
     // Identifier: [a-zA-Z_][a-zA-Z0-9_]*
     Token Lexer::identifier()
     {
@@ -123,7 +110,6 @@ namespace jc
             return {TokenType::KEYWORD, text, line, start_col};
         }
 
-        symbols.insert(text, "IDENTIFIER", line);
         return {TokenType::IDENTIFIER, text, line, start_col};
     }
 
@@ -230,11 +216,6 @@ namespace jc
             return errors;
 
         return tokens;
-    }
-
-    SymbolTable &&Lexer::move_symbols()
-    {
-        return std::move(symbols);
     }
 
 }

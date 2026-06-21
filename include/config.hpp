@@ -1,7 +1,10 @@
+#pragma once
+
 #include <argparse/argparse.hpp>
 #include <string>
 
-class CompilerConfig {
+class CompilerConfig
+{
 public:
     std::string inputFile;
     std::string outputFile;
@@ -9,8 +12,10 @@ public:
     bool firstLexicalError = false;
     bool printAst = false;
     bool printSymbolTable = false;
+    bool debug = false;
 
-    bool parse(int argc, char* argv[]) {
+    bool parse(int argc, char *argv[])
+    {
         argparse::ArgumentParser program("javinha");
 
         // arquivos de entrada e saída
@@ -34,7 +39,12 @@ public:
             .help("Printa a table de símbolos")
             .flag();
 
-        try {
+        program.add_argument("--debug")
+            .help("Printa mensagens de log durante a compilação")
+            .flag();
+
+        try
+        {
             program.parse_args(argc, argv);
             inputFile = program.get<std::string>("input_file");
             outputFile = program.get<std::string>("output_file");
@@ -42,8 +52,11 @@ public:
             firstLexicalError = program.get<bool>("--first_lexical_error");
             printAst = program.get<bool>("--ast");
             printSymbolTable = program.get<bool>("--symbol_table");
+            debug = program.get<bool>("--debug");
             return true;
-        } catch (const std::exception& err) {
+        }
+        catch (const std::exception &err)
+        {
             return false;
         }
     }

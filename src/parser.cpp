@@ -10,6 +10,7 @@
 
 using namespace jc;
 using namespace jc::parser;
+using namespace jc::ast;
 static T map_token(const Token &t);
 
 bool State::is_complete() const
@@ -23,7 +24,7 @@ const std::optional<grammar::GSymbol> State::next_symbol() const
                          : std::nullopt;
 }
 
-bool Parser::earley_parse(const std::vector<Token> &&tokens, bool print_ast)
+bool Parser::earley_parse(const std::vector<Token> &&tokens)
 {
   u64 n = tokens.size();
   std::vector<StateSet> chart(n + 1);
@@ -151,18 +152,198 @@ bool Parser::earley_parse(const std::vector<Token> &&tokens, bool print_ast)
     }
 
     auto tree = parse_tree(tokens, chart, reversed_chart);
-    print_tree(tree);
-    if (print_ast)
-    {
-      auto ast = ast::AST();
-      ast::NodePtr ptr = ast.create(tree);
-      log::ast(ptr);
-    }
+    log::parse_tree(tree);
+    auto ast = ast::AST();
+    ast_root = ast.create(tree);
+    fill_symbol_table(*ast_root);
   }
 
   return this->has_ended(chart, n);
 }
 
+void Parser::fill_symbol_table(Node &root)
+{
+  switch (root.kind)
+  {
+  case Kind::PROGRAM:
+  {
+    auto node = dynamic_cast<ProgramNode *>(&root);
+    fill_symbol_table(*node->main_class);
+    std::for_each(node->classes.begin(), node->classes.end(), [&](const auto &cl)
+                  { fill_symbol_table(*cl); });
+    break;
+  }
+  case Kind::CLASS:
+  {
+    auto node = dynamic_cast<ClassNode *>(&root);
+    symbols.insert(node->name, SymbolCategory::CLASS, 0);
+    symbols.enter_class_scope(node->name, node->parent);
+    std::for_each(node->fields.begin(), node->fields.end(), [&](const auto &f)
+                  { fill_symbol_table(*f); });
+    std::for_each(node->methods.begin(), node->methods.end(), [&](const auto &m)
+                  { fill_symbol_table(*m); });
+
+    symbols.exit_scope();
+    break;
+  }
+
+  case Kind::MAIN_CLASS:
+  {
+    auto node = dynamic_cast<MainClassNode *>(&root);
+    symbols.insert(node->name, SymbolCategory::CLASS, 0);
+    symbols.enter_class_scope(node->name);
+    fill_symbol_table(*node->main_method);
+    symbols.exit_scope();
+    break;
+  }
+  case Kind::MAIN_METHOD:
+  {
+    auto node = dynamic_cast<MainMethodNode *>(&root);
+    symbols.insert(node->name, node->return_type, SymbolCategory::METHOD, 0);
+    symbols.enter_scope(node->name);
+    symbols.insert(node->param, "String[]", SymbolCategory::PARAM, 0);
+    fill_symbol_table(*node->body);
+    symbols.exit_scope();
+    break;
+  }
+  case Kind::METHOD:
+  {
+    auto node = dynamic_cast<MethodNode *>(&root);
+    if (node->return_type)
+    {
+      auto type = dynamic_cast<TypeNode *>(&(*node->return_type));
+      symbols.insert(node->name, type->name, SymbolCategory::METHOD, 0);
+      symbols.enter_scope(node->name);
+      std::for_each(node->params.begin(), node->params.end(), [&](const auto &param)
+                    { fill_symbol_table(*param); });
+      std::for_each(node->locals.begin(), node->locals.end(), [&](const auto &var)
+                    { fill_symbol_table(*var); });
+      if (node->body)
+        fill_symbol_table(*node->body);
+
+      symbols.exit_scope();
+    }
+    break;
+  }
+  case Kind::VAR_DECL:
+  {
+    auto node = dynamic_cast<VarDeclNode *>(&root);
+    if (node->type)
+    {
+      auto type = dynamic_cast<TypeNode *>(&(*node->type));
+      symbols.insert(node->name, type->name, SymbolCategory::LOCAL, 0);
+    }
+    break;
+  }
+  case Kind::PARAM:
+  {
+    auto node = dynamic_cast<ParamNode *>(&root);
+    auto type = dynamic_cast<TypeNode *>(&(*node->type));
+    symbols.insert(node->name, type->name, SymbolCategory::PARAM, 0);
+    break;
+  }
+  case Kind::BLOCK:
+  {
+    auto node = dynamic_cast<BlockNode *>(&root);
+    std::for_each(node->stmt.begin(), node->stmt.end(), [&](const auto &stmt)
+                  { fill_symbol_table(*stmt); });
+    break;
+  }
+  case Kind::IF:
+  {
+    auto node = dynamic_cast<IfNode *>(&root);
+    if (node->cond)
+      fill_symbol_table(*node->cond);
+    if (node->then_branch)
+      fill_symbol_table(*node->then_branch);
+    if (node->else_branch)
+      fill_symbol_table(*node->else_branch);
+    break;
+  }
+  case Kind::WHILE:
+  {
+    auto node = dynamic_cast<WhileNode *>(&root);
+    if (node->cond)
+      fill_symbol_table(*node->cond);
+    if (node->body)
+      fill_symbol_table(*node->body);
+    break;
+  }
+  case Kind::PRINT:
+  {
+    auto node = dynamic_cast<PrintNode *>(&root);
+    if (node->expr)
+      fill_symbol_table(*node->expr);
+    break;
+  }
+  case Kind::ASSIGN:
+  {
+    auto node = dynamic_cast<AssignNode *>(&root);
+    if (node->value)
+      fill_symbol_table(*node->value);
+    break;
+  }
+  case Kind::ARRAY_ASSIGN:
+  {
+    auto node = dynamic_cast<ArrayAssignNode *>(&root);
+    if (node->index)
+      fill_symbol_table(*node->index);
+    if (node->value)
+      fill_symbol_table(*node->value);
+    break;
+  }
+  case Kind::ARRAY_ACCESS:
+  {
+    auto node = dynamic_cast<ArrayAccessNode *>(&root);
+    if (node->array)
+      fill_symbol_table(*node->array);
+    if (node->index)
+      fill_symbol_table(*node->index);
+    break;
+  }
+  case Kind::BIN_OP:
+  {
+    auto node = dynamic_cast<BinOpNode *>(&root);
+    if (node->left)
+      fill_symbol_table(*node->left);
+    if (node->right)
+      fill_symbol_table(*node->right);
+    break;
+  }
+  case Kind::METHOD_CALL:
+  {
+    auto node = dynamic_cast<MethodCallNode *>(&root);
+    if (node->obj)
+      fill_symbol_table(*node->obj);
+    std::for_each(node->args.begin(), node->args.end(), [&](const auto &arg)
+                  { fill_symbol_table(*arg); });
+    break;
+  }
+  case Kind::LENGTH:
+  {
+    auto node = dynamic_cast<LengthNode *>(&root);
+    if (node->obj)
+      fill_symbol_table(*node->obj);
+    break;
+  }
+  case Kind::NOT:
+  {
+    auto node = dynamic_cast<NotNode *>(&root);
+    if (node->expr)
+      fill_symbol_table(*node->expr);
+    break;
+  }
+  case Kind::NEW_ARRAY:
+  {
+    auto node = dynamic_cast<NewArrayNode *>(&root);
+    if (node->size)
+      fill_symbol_table(*node->size);
+    break;
+  }
+  default:
+    break;
+  }
+}
 bool Parser::predict(std::vector<StateSet> &chart, const State &state, const GSymbol &symbol, u64 it)
 {
   bool added = false;
@@ -233,13 +414,16 @@ bool Parser::complete(std::vector<StateSet> &chart, const State &state, u64 it)
 
 bool Parser::has_ended(const std::vector<StateSet> &chart, u64 last)
 {
-  log::debug("Verificação do último estado do Parser.");
   for (const auto &s : chart.at(last))
   {
     log::debug(s.to_string() + "\n");
     if (s.lhs == start_symbol && s.is_complete() && s.start == 0)
+    {
+      log::debug("Parser encontrou um caminho!");
       return true;
+    }
   }
+  log::debug("Parser não encontrou um caminho...");
   return false;
 }
 
@@ -295,7 +479,7 @@ std::vector<std::pair<u64, DFSEdge>> Parser::top_list(
     return (depth == (i64)bottom) && (current_start == finish);
   };
 
-  auto child = [](i64 depth, const DFSEdge &edge) -> u64
+  auto child = [](i64 _depth, const DFSEdge &edge) -> u64
   {
     return edge.finish;
   };
@@ -434,14 +618,14 @@ void Parser::print_tree(const PTree &node, int indent)
 
     if constexpr (std::is_same_v<T, PTNode>)
     {
-      std::cout << pad << "[" << jc::to_string(val.rule) << "]\n";
+      log::debug(std::format("{} [{}]", pad, jc::to_string(val.rule)));
       for (const auto &child : val.children)
         print_tree(*child, indent + 1);
     }
     else if constexpr (std::is_same_v<T, std::optional<Token>>)
     {
       if (val.has_value())
-        std::cout << pad << "\"" << val->value << "\"\n";
+        log::debug(std::format("{}\"{}\"", pad, val->value));
     } }, node.value);
 }
 

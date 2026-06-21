@@ -4,19 +4,90 @@
 #include "ast.hpp"
 #include "grammar.hpp"
 
-void jc::log::debug(const std::string &msg)
+void jc::log::ast(const jc::ast::NodePtr &node, std::ostream &stream)
 {
-#ifdef DEBUG
-  std::cout << "[DEBUG] " << msg << "\n";
-#endif
+  if (config.printAst)
+  {
+    stream << "\n[ÁRVORE SINTÁTICA ABSTRATA]\n";
+    auto *prog = static_cast<jc::ast::ProgramNode *>(node.get());
+    prog->print();
+  }
 }
 
-void jc::log::ast(const jc::ast::NodePtr &node)
+void jc::log::symbol_table(const jc::SymbolTable &table, std::ostream &stream)
 {
-  // #ifdef AST
-  auto *prog = static_cast<jc::ast::ProgramNode *>(node.get());
-  prog->print();
-  // #endif
+  if (config.printSymbolTable)
+  {
+    stream << "\n[TABELA DE SÍMBOLOS]\n";
+    table.print();
+  }
+}
+
+void jc::log::lexer_errors(const std::vector<std::string> &errors, std::ostream &stream)
+{
+  if (config.firstLexicalError)
+    stream << errors.front();
+  else
+  {
+    for (const auto &error : errors)
+    {
+      stream << error;
+    }
+  }
+}
+
+void jc::log::tokens(const std::vector<jc::Token> &tokens, std::ostream &stream)
+{
+  if (config.printTokens)
+  {
+    stream << "\n[TOKENS]\n";
+    for (const auto &t : tokens)
+    {
+      stream << "(" << jc::to_string(t.type) << ", " << t.value
+             << ") [linha " << t.line << "]\n";
+    }
+  }
+}
+
+void jc::log::parser_errors(const std::vector<jc::parser::ParserError> &errors, std::ostream &stream)
+{
+  stream << "\n[ERROS SINTÁTICOS]\n";
+  for (const auto &error : errors)
+  {
+    stream << error.to_string() << "\n";
+  }
+}
+
+void jc::log::parse_tree(const jc::parser::PTree &root, int indent, std::ostream &stream)
+{
+  if (config.debug)
+  {
+    stream << "\n[ÁRVORE SINTÁTICA CONCRETA]\n";
+    std::function<void(const jc::parser::PTree &, int)> parse_rec =
+        [&](const jc::parser::PTree &current_node, int current_indent)
+    {
+      std::string pad(current_indent * 2, ' ');
+
+      std::visit([&](auto &&val)
+                 {
+        using T = std::decay_t<decltype(val)>;
+
+        if constexpr (std::is_same_v<T, jc::parser::PTNode>)
+        {
+          stream << std::format("{} [{}]\n", pad, jc::to_string(val.rule));
+          for (const auto &child : val.children) {
+            parse_rec(*child, current_indent + 1);
+          }
+        }
+        else if constexpr (std::is_same_v<T, std::optional<jc::Token>>)
+        {
+          if (val.has_value())
+            stream << std::format("{}\"{}\"\n", pad, val->value);
+        } }, current_node.value);
+    };
+
+    parse_rec(root, indent);
+  }
 }
 
 std::string jc::to_string(jc::TokenType t)
@@ -50,6 +121,23 @@ std::string jc::to_string(const jc::ast::TypeKind tk)
     return "int";
   case jc::ast::TypeKind::INT_ARRAY:
     return "int[]";
+  default:
+    return "";
+  }
+}
+
+std::string jc::to_string(const jc::SymbolCategory symbol)
+{
+  switch (symbol)
+  {
+  case SymbolCategory::CLASS:
+    return "class";
+  case SymbolCategory::METHOD:
+    return "method";
+  case SymbolCategory::LOCAL:
+    return "local";
+  case SymbolCategory::PARAM:
+    return "param";
   default:
     return "";
   }
