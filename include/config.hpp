@@ -12,6 +12,7 @@ public:
     bool firstLexicalError = false;
     bool printAst = false;
     bool printSymbolTable = false;
+    bool debug = false;
 
     bool parse(int argc, char *argv[])
     {
@@ -38,6 +39,10 @@ public:
             .help("Printa a table de símbolos")
             .flag();
 
+        program.add_argument("--debug")
+            .help("Printa mensagens de log durante a compilação")
+            .flag();
+
         try
         {
             program.parse_args(argc, argv);
@@ -47,6 +52,7 @@ public:
             firstLexicalError = program.get<bool>("--first_lexical_error");
             printAst = program.get<bool>("--ast");
             printSymbolTable = program.get<bool>("--symbol_table");
+            debug = program.get<bool>("--debug");
             return true;
         }
         catch (const std::exception &err)

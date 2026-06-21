@@ -4,14 +4,7 @@
 #include "ast.hpp"
 #include "grammar.hpp"
 
-void jc::log::debug(const std::string &msg)
-{
-#ifdef DEBUG
-  std::cout << "[DEBUG] " << msg << "\n";
-#endif
-}
-
-void jc::log::ast(const jc::ast::NodePtr &node)
+void jc::log::ast(const jc::ast::NodePtr &node, std::ostream &stream)
 {
   // #ifdef AST
   auto *prog = static_cast<jc::ast::ProgramNode *>(node.get());
@@ -19,9 +12,45 @@ void jc::log::ast(const jc::ast::NodePtr &node)
   // #endif
 }
 
-void jc::log::symbol_table(const jc::SymbolTable &table)
+void jc::log::symbol_table(const jc::SymbolTable &table, std::ostream &stream)
 {
   table.print();
+}
+
+void jc::log::lexer_errors(const std::vector<std::string> &errors, std::ostream &stream)
+{
+  if (config.firstLexicalError)
+    stream << errors.front();
+  else
+  {
+    for (const auto &error : errors)
+    {
+      stream << error;
+    }
+  }
+}
+
+void jc::log::tokens(const std::vector<jc::Token> &tokens, std::ostream &stream)
+{
+  if (config.printTokens)
+  {
+    stream << "TOKENS:\n";
+    for (const auto &t : tokens)
+    {
+      stream << "(" << jc::to_string(t.type) << ", " << t.value
+             << ") [linha " << t.line << "]\n";
+    }
+  }
+}
+
+void jc::log::parser_errors(const std::vector<jc::parser::ParserError> &errors, std::ostream &stream)
+{
+  stream << "\n===== ERROS SINTÁTICOS ENCONTRADOS =====\n";
+  for (const auto &error : errors)
+  {
+    stream << error.to_string() << "\n";
+  }
+  stream << "=========================================\n";
 }
 
 std::string jc::to_string(jc::TokenType t)
