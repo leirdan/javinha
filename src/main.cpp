@@ -8,6 +8,7 @@
 #include "parser.hpp"
 #include "utils.hpp"
 #include "config.hpp"
+#include "semantic.hpp"
 
 using namespace jc;
 
@@ -63,6 +64,16 @@ int main(int argc, char *argv[])
   ast::NodePtr ast = parser->release_ast();
   SymbolTable table = parser->release_symbol_table();
   delete parser;
+
+  semantic::SemanticAnalyzer analyzer(table);
+  analyzer.analyze(ast);
+
+  if (analyzer.has_errors()) {
+    std::cout << "Erros semânticos encontrados:\n";
+    for (const auto &e : analyzer.get_errors())
+      std::cout << e.to_string() << "\n";
+    return EXIT_FAILURE;
+  }
 
   log::ast(ast);
   log::symbol_table(table);

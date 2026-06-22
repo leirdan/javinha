@@ -457,6 +457,7 @@ NodePtr AST::cmd(const PTNode &root)
   NodePtr sub_cmd1 = nullptr;
   NodePtr sub_cmd2 = nullptr;
   std::string identifier_name = "";
+  u32 identifier_line = 0;
 
   bool is_if = false, is_while = false, is_print = false, is_array_assign = false;
 
@@ -500,6 +501,7 @@ NodePtr AST::cmd(const PTNode &root)
         else if (token.type == TokenType::IDENTIFIER && identifier_name.empty())
         {
           identifier_name = token.value;
+          identifier_line = token.line;
         }
       }
     }
@@ -514,9 +516,9 @@ NodePtr AST::cmd(const PTNode &root)
   if (!identifier_name.empty())
   {
     if (is_array_assign)
-      return std::make_unique<ArrayAssignNode>(identifier_name, std::move(expr1), std::move(expr2));
+      return std::make_unique<ArrayAssignNode>(identifier_name, std::move(expr1), std::move(expr2), identifier_line);
     else
-      return std::make_unique<AssignNode>(identifier_name, std::move(expr1));
+      return std::make_unique<AssignNode>(identifier_name, std::move(expr1), identifier_line);
   }
 
   return nullptr;
@@ -659,7 +661,7 @@ NodePtr AST::obj_met(const PTNode &root, NodePtr left)
       arguments = list_exp(std::get<PTNode>(root.children[3]->value));
     }
 
-    auto call_node = std::make_unique<MethodCallNode>(std::move(left), method_name, std::move(arguments));
+    auto call_node = std::make_unique<MethodCallNode>(std::move(left), method_name, std::move(arguments), first_token.line);
 
     const auto &last_child = root.children.back();
     if (std::holds_alternative<PTNode>(last_child->value) && std::get<PTNode>(last_child->value).rule == NT::OBJMET)
@@ -700,7 +702,7 @@ NodePtr AST::obj_atom(const PTNode &root)
       }
       else
       {
-        return std::make_unique<NewObjectNode>(second_token.value);
+        return std::make_unique<NewObjectNode>(second_token.value, second_token.line);
       }
     }
     if (token.value == "(")
@@ -712,7 +714,7 @@ NodePtr AST::obj_atom(const PTNode &root)
     if (token.value == "this")
       return std::make_unique<ThisNode>();
     if (token.type == TokenType::IDENTIFIER)
-      return std::make_unique<IdentifierNode>(token.value);
+      return std::make_unique<IdentifierNode>(token.value, token.line);
     if (token.type == TokenType::NUMBER)
       return std::make_unique<NumberNode>(std::stoi(token.value));
   }

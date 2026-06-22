@@ -86,6 +86,7 @@ namespace jc
     struct Node
     {
       Kind kind;
+      u32 line = 0;
       virtual ~Node() = default;
 
       virtual std::string label() const = 0;
@@ -295,8 +296,8 @@ namespace jc
       NodePtr index;
       NodePtr value;
       ArrayAssignNode() : Node(Kind::ARRAY_ASSIGN) {}
-      ArrayAssignNode(std::string name, NodePtr index, NodePtr value)
-          : Node(Kind::ARRAY_ASSIGN), name(std::move(name)), index(std::move(index)), value(std::move(value)) {}
+      ArrayAssignNode(std::string name, NodePtr index, NodePtr value, u32 l = 0)
+          : Node(Kind::ARRAY_ASSIGN), name(std::move(name)), index(std::move(index)), value(std::move(value)) { line = l; }
 
       std::string label() const override { return std::format("ArrayAssign[{}]", name); }
 
@@ -316,7 +317,7 @@ namespace jc
       std::string name;
       NodePtr value;
       AssignNode() : Node(Kind::ASSIGN) {}
-      AssignNode(std::string name, NodePtr value) : Node(Kind::ASSIGN), name(std::move(name)), value(std::move(value)) {}
+      AssignNode(std::string name, NodePtr value, u32 l = 0) : Node(Kind::ASSIGN), name(std::move(name)), value(std::move(value)) { line = l; }
 
       std::string label() const override { return std::format("Assign[{}]", name); }
 
@@ -460,7 +461,7 @@ namespace jc
     struct IdentifierNode : Node
     {
       std::string name;
-      explicit IdentifierNode(std::string n) : Node(Kind::IDENTIFIER), name(std::move(n)) {}
+      explicit IdentifierNode(std::string n, u32 l = 0) : Node(Kind::IDENTIFIER), name(std::move(n)) { line = l; }
       std::string label() const override { return std::format("Id[{}]", name); }
     };
 
@@ -486,7 +487,7 @@ namespace jc
       std::string method;
       std::vector<NodePtr> args;
       MethodCallNode() : Node(Kind::METHOD_CALL) {}
-      MethodCallNode(NodePtr obj, std::string method, std::vector<NodePtr> args) : Node(Kind::METHOD_CALL), obj(std::move(obj)), method(std::move(method)), args(std::move(args)) {}
+      MethodCallNode(NodePtr obj, std::string method, std::vector<NodePtr> args, u32 l = 0) : Node(Kind::METHOD_CALL), obj(std::move(obj)), method(std::move(method)), args(std::move(args)) { line = l; }
 
       std::string label() const override { return std::format("MethodCall[{}]", method); }
 
@@ -522,7 +523,7 @@ namespace jc
     {
       std::string class_name;
       NewObjectNode() : Node(Kind::NEW_OBJECT) {}
-      NewObjectNode(std::string class_name) : Node(Kind::NEW_OBJECT), class_name(std::move(class_name)) {}
+      NewObjectNode(std::string class_name, u32 l = 0) : Node(Kind::NEW_OBJECT), class_name(std::move(class_name)) { line = l; }
 
       std::string label() const override { return std::format("NewObject[{}]", class_name); }
     };

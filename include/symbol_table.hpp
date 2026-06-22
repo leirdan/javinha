@@ -115,6 +115,28 @@ namespace jc
       current_scope = new_scope;
     }
 
+    bool reenter_class_scope(const std::string &class_name)
+    {
+      auto it = class_scopes.find(class_name);
+      if (it == class_scopes.end())
+        return false;
+      current_scope = it->second;
+      return true;
+    }
+
+    bool reenter_scope(const std::string &scope_name)
+    {
+      for (auto &child : current_scope->children)
+      {
+        if (child->name == scope_name)
+        {
+          current_scope = child;
+          return true;
+        }
+      }
+      return false;
+    }
+
     void exit_scope()
     {
       if (current_scope->parent.lock() != nullptr)

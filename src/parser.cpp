@@ -176,7 +176,7 @@ void Parser::fill_symbol_table(Node &root)
   case Kind::CLASS:
   {
     auto node = dynamic_cast<ClassNode *>(&root);
-    symbols.insert(node->name, SymbolCategory::CLASS, 0);
+    symbols.insert(node->name, SymbolCategory::CLASS, node->line);
     symbols.enter_class_scope(node->name, node->parent);
     std::for_each(node->fields.begin(), node->fields.end(), [&](const auto &f)
                   { fill_symbol_table(*f); });
@@ -190,7 +190,7 @@ void Parser::fill_symbol_table(Node &root)
   case Kind::MAIN_CLASS:
   {
     auto node = dynamic_cast<MainClassNode *>(&root);
-    symbols.insert(node->name, SymbolCategory::CLASS, 0);
+    symbols.insert(node->name, SymbolCategory::CLASS, node->line);
     symbols.enter_class_scope(node->name);
     fill_symbol_table(*node->main_method);
     symbols.exit_scope();
@@ -199,9 +199,9 @@ void Parser::fill_symbol_table(Node &root)
   case Kind::MAIN_METHOD:
   {
     auto node = dynamic_cast<MainMethodNode *>(&root);
-    symbols.insert(node->name, node->return_type, SymbolCategory::METHOD, 0);
+    symbols.insert(node->name, node->return_type, SymbolCategory::METHOD, node->line);
     symbols.enter_scope(node->name);
-    symbols.insert(node->param, "String[]", SymbolCategory::PARAM, 0);
+    symbols.insert(node->param, "String[]", SymbolCategory::PARAM, node->line);
     fill_symbol_table(*node->body);
     symbols.exit_scope();
     break;
@@ -212,7 +212,7 @@ void Parser::fill_symbol_table(Node &root)
     if (node->return_type)
     {
       auto type = dynamic_cast<TypeNode *>(&(*node->return_type));
-      symbols.insert(node->name, type->name, SymbolCategory::METHOD, 0);
+      symbols.insert(node->name, type->name, SymbolCategory::METHOD, node->line);
       symbols.enter_scope(node->name);
       std::for_each(node->params.begin(), node->params.end(), [&](const auto &param)
                     { fill_symbol_table(*param); });
@@ -231,7 +231,7 @@ void Parser::fill_symbol_table(Node &root)
     if (node->type)
     {
       auto type = dynamic_cast<TypeNode *>(&(*node->type));
-      symbols.insert(node->name, type->name, SymbolCategory::LOCAL, 0);
+      symbols.insert(node->name, type->name, SymbolCategory::LOCAL, node->line);
     }
     break;
   }
@@ -239,7 +239,7 @@ void Parser::fill_symbol_table(Node &root)
   {
     auto node = dynamic_cast<ParamNode *>(&root);
     auto type = dynamic_cast<TypeNode *>(&(*node->type));
-    symbols.insert(node->name, type->name, SymbolCategory::PARAM, 0);
+    symbols.insert(node->name, type->name, SymbolCategory::PARAM, node->line);
     break;
   }
   case Kind::BLOCK:
