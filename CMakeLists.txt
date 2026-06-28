@@ -25,17 +25,18 @@ file(GLOB SOURCES "src/*.cpp")
 add_executable(${APP_NAME} ${SOURCES})
 target_include_directories(${APP_NAME} PRIVATE ${INCLUDE_DIR})
 target_link_libraries(${APP_NAME} argparse)
-target_compile_options(${APP_NAME} PRIVATE 
-    -Wall
-    -Wextra
-    -Wpedantic
-    $<$<CONFIG:Debug>:
-        -g3
-        -O0
-        -DDEBUG
-    >
-    $<$<CONFIG:Release>:
-        -O3
-        -DNDEBUG
-    >
-)
+if(MSVC)
+    target_compile_options(${APP_NAME} PRIVATE
+        /W4
+        $<$<CONFIG:Debug>:/Od /Zi /DDEBUG>
+        $<$<CONFIG:Release>:/O2 /DNDEBUG>
+    )
+else()
+    target_compile_options(${APP_NAME} PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        $<$<CONFIG:Debug>:-g3 -O0 -DDEBUG>
+        $<$<CONFIG:Release>:-O3 -DNDEBUG>
+    )
+endif()
