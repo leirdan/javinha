@@ -15,6 +15,8 @@ namespace jc
     METHOD,
     LOCAL,
     PARAM,
+    TEMP, // pro backend
+    LABEL
   };
 
   struct Symbol
@@ -47,7 +49,7 @@ namespace jc
     std::weak_ptr<Scope> parent; // evitar ref circular
     std::optional<std::string> parent_class;
     std::unordered_map<std::string, Symbol> symbols;
-    std::vector<std::string> param_order; 
+    std::vector<std::string> param_order;
     std::vector<std::shared_ptr<Scope>> children;
 
     Scope(std::string name, std::shared_ptr<Scope> parent = nullptr)
