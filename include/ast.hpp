@@ -2,9 +2,11 @@
 #include <memory>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <string_view>
 #include <vector>
 #include <functional>
+#include "3AC.hpp"
 #include "types.hpp"
 #include "utils.hpp"
 #include "parser.hpp"
@@ -13,6 +15,11 @@ namespace jc
 {
   namespace ast
   {
+    using jc::backend::OpCode;
+    using jc::backend::TACGenerator;
+    using jc::backend::TACInstruction;
+    using jc::backend::TACList;
+
     enum class Kind : u8
     {
       // estrutura do programa
@@ -65,6 +72,23 @@ namespace jc
       SUB,
     };
 
+    jc::backend::OpCode get_op_code(BinOp op)
+    {
+      switch (op)
+      {
+      case BinOp::ADD:
+        return OpCode::ADD;
+      case BinOp::AND:
+        return OpCode::AND;
+      case BinOp::GT:
+        return OpCode::GT;
+      case BinOp::MULS:
+        return OpCode::MUL;
+      case BinOp::SUB:
+        return OpCode::SUB;
+      }
+    };
+
     inline std::string to_string(BinOp op)
     {
       switch (op)
@@ -86,6 +110,7 @@ namespace jc
     struct Node
     {
       Kind kind;
+      u32 line = 0;
       virtual ~Node() = default;
 
       virtual std::string label() const = 0;
@@ -107,8 +132,14 @@ namespace jc
         print(std::cout, tabs, is_last);
       }
 
+      virtual std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) {
+        return {"", {}};
+      }
+
     protected:
-      explicit Node(Kind k) : kind(k) {}
+      explicit Node(Kind k) : kind(k)
+      {
+      }
     };
 
     using NodePtr = ::std::unique_ptr<Node>;
@@ -295,8 +326,8 @@ namespace jc
       NodePtr index;
       NodePtr value;
       ArrayAssignNode() : Node(Kind::ARRAY_ASSIGN) {}
-      ArrayAssignNode(std::string name, NodePtr index, NodePtr value)
-          : Node(Kind::ARRAY_ASSIGN), name(std::move(name)), index(std::move(index)), value(std::move(value)) {}
+      ArrayAssignNode(std::string name, NodePtr index, NodePtr value, u32 l = 0)
+          : Node(Kind::ARRAY_ASSIGN), name(std::move(name)), index(std::move(index)), value(std::move(value)) { line = l; }
 
       std::string label() const override { return std::format("ArrayAssign[{}]", name); }
 
@@ -316,9 +347,10 @@ namespace jc
       std::string name;
       NodePtr value;
       AssignNode() : Node(Kind::ASSIGN) {}
-      AssignNode(std::string name, NodePtr value) : Node(Kind::ASSIGN), name(std::move(name)), value(std::move(value)) {}
+      AssignNode(std::string name, NodePtr value, u32 l = 0) : Node(Kind::ASSIGN), name(std::move(name)), value(std::move(value)) { line = l; }
 
       std::string label() const override { return std::format("Assign[{}]", name); }
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -335,6 +367,7 @@ namespace jc
       BlockNode(std::vector<NodePtr> stmt) : Node(Kind::BLOCK), stmt(std::move(stmt)) {}
 
       std::string label() const override { return "Block"; }
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -356,6 +389,7 @@ namespace jc
           : Node(Kind::IF), cond(std::move(cond)), then_branch(std::move(then)), else_branch(std::move(else_b)) {}
 
       std::string label() const override { return "If"; }
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -377,6 +411,7 @@ namespace jc
       PrintNode(NodePtr expr) : Node(Kind::PRINT), expr(std::move(expr)) {}
 
       std::string label() const override { return "Print"; }
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -393,8 +428,8 @@ namespace jc
       WhileNode() : Node(Kind::WHILE) {}
       WhileNode(NodePtr cond, NodePtr body) : Node(Kind::WHILE), cond(std::move(cond)), body(std::move(body)) {}
 
-      // Antes estava "WhileNode" — inconsistente com "If" e "Print".
       std::string label() const override { return "While"; }
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -416,7 +451,6 @@ namespace jc
       ArrayAccessNode() : Node(Kind::ARRAY_ACCESS) {}
       ArrayAccessNode(NodePtr array, NodePtr index) : Node(Kind::ARRAY_ACCESS), array(std::move(array)), index(std::move(index)) {}
 
-      // Antes estava "ArrayAccessNode" — os outros nós não usam o sufixo "Node".
       std::string label() const override { return "ArrayAccess"; }
 
       std::vector<const Node *> children() const override
@@ -448,6 +482,20 @@ namespace jc
           result.push_back(right.get());
         return result;
       }
+
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override 
+      {
+        auto [left_sym, left_code] = left->generate_tac(generator, current_scope);
+        auto [right_sym, right_code] = right->generate_tac(generator, current_scope);
+
+        auto new_t = generator.next_temp(current_scope, "int");
+        TACList code = left_code;
+        code.insert(code.end(), right_code.begin(), right_code.end());
+
+        auto op = get_op_code(this->op);
+        code.push_back({op, new_t, left_sym, right_sym});
+        return {new_t, code};
+      }
     };
 
     struct BoolNode : Node
@@ -455,13 +503,15 @@ namespace jc
       bool value;
       explicit BoolNode(bool v) : Node(Kind::BOOL), value(v) {}
       std::string label() const override { return std::format("Bool[{}]", value ? "true" : "false"); }
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct IdentifierNode : Node
     {
       std::string name;
-      explicit IdentifierNode(std::string n) : Node(Kind::IDENTIFIER), name(std::move(n)) {}
+      explicit IdentifierNode(std::string n, u32 l = 0) : Node(Kind::IDENTIFIER), name(std::move(n)) { line = l; }
       std::string label() const override { return std::format("Id[{}]", name); }
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct LengthNode : Node
@@ -486,9 +536,10 @@ namespace jc
       std::string method;
       std::vector<NodePtr> args;
       MethodCallNode() : Node(Kind::METHOD_CALL) {}
-      MethodCallNode(NodePtr obj, std::string method, std::vector<NodePtr> args) : Node(Kind::METHOD_CALL), obj(std::move(obj)), method(std::move(method)), args(std::move(args)) {}
+      MethodCallNode(NodePtr obj, std::string method, std::vector<NodePtr> args, u32 l = 0) : Node(Kind::METHOD_CALL), obj(std::move(obj)), method(std::move(method)), args(std::move(args)) { line = l; }
 
       std::string label() const override { return std::format("MethodCall[{}]", method); }
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -522,7 +573,7 @@ namespace jc
     {
       std::string class_name;
       NewObjectNode() : Node(Kind::NEW_OBJECT) {}
-      NewObjectNode(std::string class_name) : Node(Kind::NEW_OBJECT), class_name(std::move(class_name)) {}
+      NewObjectNode(std::string class_name, u32 l = 0) : Node(Kind::NEW_OBJECT), class_name(std::move(class_name)) { line = l; }
 
       std::string label() const override { return std::format("NewObject[{}]", class_name); }
     };
@@ -548,6 +599,7 @@ namespace jc
       i32 value;
       NumberNode(i32 v) : Node(Kind::NUMBER), value(v) {}
       std::string label() const override { return std::format("Number[{}]", value); }
+      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct ThisNode : Node

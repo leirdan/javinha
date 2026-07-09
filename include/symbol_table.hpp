@@ -15,6 +15,8 @@ namespace jc
     METHOD,
     LOCAL,
     PARAM,
+    TEMP, // pro backend
+    LABEL
   };
 
   struct Symbol
@@ -47,6 +49,7 @@ namespace jc
     std::weak_ptr<Scope> parent; // evitar ref circular
     std::optional<std::string> parent_class;
     std::unordered_map<std::string, Symbol> symbols;
+    std::vector<std::string> param_order;
     std::vector<std::shared_ptr<Scope>> children;
 
     Scope(std::string name, std::shared_ptr<Scope> parent = nullptr)
@@ -58,6 +61,8 @@ namespace jc
         return false;
 
       symbols[sym.name] = sym;
+      if (sym.category == SymbolCategory::PARAM)
+        param_order.push_back(sym.name);
       return true;
     }
 
@@ -115,6 +120,28 @@ namespace jc
       current_scope = new_scope;
     }
 
+    bool reenter_class_scope(const std::string &class_name)
+    {
+      auto it = class_scopes.find(class_name);
+      if (it == class_scopes.end())
+        return false;
+      current_scope = it->second;
+      return true;
+    }
+
+    bool reenter_scope(const std::string &scope_name)
+    {
+      for (auto &child : current_scope->children)
+      {
+        if (child->name == scope_name)
+        {
+          current_scope = child;
+          return true;
+        }
+      }
+      return false;
+    }
+
     void exit_scope()
     {
       if (current_scope->parent.lock() != nullptr)
@@ -168,6 +195,59 @@ namespace jc
     {
       root->print(stream, 0);
     }
+
+    std::optional<std::string> get_method_return_type(const std::string &class_name, const std::string &method_name)
+    {
+      auto it = class_scopes.find(class_name);
+      if (it == class_scopes.end())
+        return std::nullopt;
+      auto &class_scope = it->second;
+      if (class_scope->symbols.contains(method_name))
+        return class_scope->symbols[method_name].type;
+      if (class_scope->parent_class.has_value())
+      {
+        auto parent = class_scope->parent_class.value();
+        while (!parent.empty() && class_scopes.contains(parent))
+        {
+          auto &base = class_scopes[parent];
+          if (base->symbols.contains(method_name))
+            return base->symbols[method_name].type;
+          parent = base->parent_class.value_or("");
+        }
+      }
+      return std::nullopt;
+    }
+
+    // Retorna os tipos dos parâmetros na ordem de declaração
+    std::vector<std::string> get_method_param_types(const std::string &class_name, const std::string &method_name)
+    {
+      std::vector<std::string> result;
+      auto it = class_scopes.find(class_name);
+      if (it == class_scopes.end())
+        return result;
+      auto &class_scope = it->second;
+      for (auto &child : class_scope->children)
+      {
+        if (child->name == method_name)
+        {
+          for (const auto &param_name : child->param_order)
+          {
+            auto sym_it = child->symbols.find(param_name);
+            if (sym_it != child->symbols.end() && sym_it->second.type.has_value())
+              result.push_back(*sym_it->second.type);
+          }
+          return result;
+        }
+      }
+      return result;
+    }
+
+    bool class_exists(const std::string &class_name)
+    {
+      return class_scopes.contains(class_name);
+    }
+
+    std::shared_ptr<Scope> get_current_scope() const { return current_scope; }
   };
 
 }
