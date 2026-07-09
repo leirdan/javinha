@@ -1,5 +1,6 @@
 #include "ast.hpp"
 #include "utils.hpp"
+#include "3AC.hpp"
 #include <variant>
 
 using namespace jc::ast;
@@ -742,4 +743,118 @@ std::vector<NodePtr> AST::list_exp(const PTNode &root)
   }
 
   return expressions;
+}
+
+std::pair<std::string, TACList> NumberNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope) 
+{
+    return {std::to_string(value), {}};
+}
+
+std::pair<std::string, TACList> IdentifierNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope) 
+{
+    return {name, {}};
+}
+
+std::pair<std::string, TACList> BoolNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope) 
+{
+    return {value ? "1" : "0", {}};
+}
+
+std::pair<std::string, TACList> AssignNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope) 
+{
+    auto [val_sym, val_code] = value->generate_tac(generator, current_scope);
+    TACList code = val_code;
+    code.push_back({jc::backend::OpCode::ASSIGN, name, val_sym, ""});
+    return {name, code};
+}
+
+std::pair<std::string, TACList> BlockNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope) 
+{
+    TACList code;
+    for (auto& statement : stmt) {
+        if (statement) {
+            auto [_, stmt_code] = statement->generate_tac(generator, current_scope);
+            code.insert(code.end(), stmt_code.begin(), stmt_code.end());
+        }
+    }
+    return {"", code};
+}
+
+std::pair<std::string, TACList> PrintNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope) 
+{
+    auto [expr_sym, expr_code] = expr->generate_tac(generator, current_scope);
+    TACList code = expr_code;
+    code.push_back({jc::backend::OpCode::PRINT, "", expr_sym, ""});
+    return {"", code};
+}
+
+std::pair<std::string, TACList> IfNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope) 
+{
+    auto [cond_sym, cond_code] = cond->generate_tac(generator, current_scope);
+    std::string label_false = generator.next_label(current_scope);
+    std::string label_end = generator.next_label(current_scope);
+
+    TACList code = cond_code;
+    code.push_back({jc::backend::OpCode::IF_FALSE, label_false, cond_sym, ""});
+    
+    if (then_branch) {
+        auto [_, then_code] = then_branch->generate_tac(generator, current_scope);
+        code.insert(code.end(), then_code.begin(), then_code.end());
+    }
+    code.push_back({jc::backend::OpCode::GOTO, label_end, "", ""});
+    
+    code.push_back({jc::backend::OpCode::LABEL, label_false, "", ""});
+    if (else_branch) {
+        auto [_, else_code] = else_branch->generate_tac(generator, current_scope);
+        code.insert(code.end(), else_code.begin(), else_code.end());
+    }
+    
+    code.push_back({jc::backend::OpCode::LABEL, label_end, "", ""});
+    return {"", code};
+}
+
+std::pair<std::string, TACList> WhileNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope) 
+{
+    std::string label_start = generator.next_label(current_scope);
+    std::string label_end = generator.next_label(current_scope);
+
+    TACList code;
+    code.push_back({jc::backend::OpCode::LABEL, label_start, "", ""});
+    
+    auto [cond_sym, cond_code] = cond->generate_tac(generator, current_scope);
+    code.insert(code.end(), cond_code.begin(), cond_code.end());
+    
+    code.push_back({jc::backend::OpCode::IF_FALSE, label_end, cond_sym, ""});
+    
+    if (body) {
+        auto [_, body_code] = body->generate_tac(generator, current_scope);
+        code.insert(code.end(), body_code.begin(), body_code.end());
+    }
+    
+    code.push_back({jc::backend::OpCode::GOTO, label_start, "", ""});
+    code.push_back({jc::backend::OpCode::LABEL, label_end, "", ""});
+    return {"", code};
+}
+
+std::pair<std::string, TACList> MethodCallNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope) 
+{
+    TACList code;
+    auto [obj_sym, obj_code] = obj->generate_tac(generator, current_scope);
+    code.insert(code.end(), obj_code.begin(), obj_code.end());
+
+    std::vector<std::string> arg_syms;
+    for (auto& arg : args) {
+        auto [arg_sym, arg_code] = arg->generate_tac(generator, current_scope);
+        code.insert(code.end(), arg_code.begin(), arg_code.end());
+        arg_syms.push_back(arg_sym);
+    }
+
+    code.push_back({jc::backend::OpCode::PARAM, "", obj_sym, ""});
+    for (auto& sym : arg_syms) {
+        code.push_back({jc::backend::OpCode::PARAM, "", sym, ""});
+    }
+
+    auto result_temp = generator.next_temp(current_scope, "int");
+    code.push_back({jc::backend::OpCode::CALL, result_temp, method, std::to_string(arg_syms.size() + 1)});
+    return {result_temp, code};
 }
