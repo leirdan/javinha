@@ -745,7 +745,7 @@ std::vector<NodePtr> AST::list_exp(const PTNode &root)
   return expressions;
 }
 
-std::pair<std::string, TACList> ClassNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue ClassNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   TACList code;
   for (auto &m : methods)
@@ -760,7 +760,7 @@ std::pair<std::string, TACList> ClassNode::generate_tac(TACGenerator &generator,
   return {"", code};
 }
 
-std::pair<std::string, TACList> MainClassNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue MainClassNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   TACList code;
 
@@ -773,22 +773,22 @@ std::pair<std::string, TACList> MainClassNode::generate_tac(TACGenerator &genera
   return {"", code};
 }
 
-std::pair<std::string, TACList> NumberNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue NumberNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   return {std::to_string(value), {}};
 }
 
-std::pair<std::string, TACList> IdentifierNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue IdentifierNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   return {name, {}};
 }
 
-std::pair<std::string, TACList> BoolNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue BoolNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   return {value ? "1" : "0", {}};
 }
 
-std::pair<std::string, TACList> AssignNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue AssignNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   auto [val_sym, val_code] = value->generate_tac(generator, current_scope);
   TACList code = val_code;
@@ -796,7 +796,7 @@ std::pair<std::string, TACList> AssignNode::generate_tac(TACGenerator &generator
   return {name, code};
 }
 
-std::pair<std::string, TACList> BlockNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue BlockNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   TACList code;
   for (auto &statement : stmt)
@@ -810,7 +810,7 @@ std::pair<std::string, TACList> BlockNode::generate_tac(TACGenerator &generator,
   return {"", code};
 }
 
-std::pair<std::string, TACList> PrintNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue PrintNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   auto [expr_sym, expr_code] = expr->generate_tac(generator, current_scope);
   TACList code = expr_code;
@@ -818,7 +818,7 @@ std::pair<std::string, TACList> PrintNode::generate_tac(TACGenerator &generator,
   return {"", code};
 }
 
-std::pair<std::string, TACList> IfNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue IfNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   auto [cond_sym, cond_code] = cond->generate_tac(generator, current_scope);
   std::string label_false = generator.next_label(current_scope);
@@ -845,7 +845,7 @@ std::pair<std::string, TACList> IfNode::generate_tac(TACGenerator &generator, Sy
   return {"", code};
 }
 
-std::pair<std::string, TACList> WhileNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue WhileNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   std::string label_start = generator.next_label(current_scope);
   std::string label_end = generator.next_label(current_scope);
@@ -869,7 +869,7 @@ std::pair<std::string, TACList> WhileNode::generate_tac(TACGenerator &generator,
   return {"", code};
 }
 
-std::pair<std::string, TACList> MethodCallNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue MethodCallNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   TACList code;
   auto [obj_sym, obj_code] = obj->generate_tac(generator, current_scope);
@@ -894,7 +894,7 @@ std::pair<std::string, TACList> MethodCallNode::generate_tac(TACGenerator &gener
   return {result_temp, code};
 }
 
-std::pair<std::string, TACList> LengthNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue LengthNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   TACList code;
   auto [obj_sym, obj_code] = obj->generate_tac(generator, current_scope);
@@ -906,7 +906,7 @@ std::pair<std::string, TACList> LengthNode::generate_tac(TACGenerator &generator
   return {new_t, code};
 }
 
-std::pair<std::string, TACList> NewArrayNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue NewArrayNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   TACList code;
   auto [size_sym, size_code] = size->generate_tac(generator, current_scope);
@@ -917,7 +917,7 @@ std::pair<std::string, TACList> NewArrayNode::generate_tac(TACGenerator &generat
   return {new_t, code};
 }
 
-std::pair<std::string, TACList> NewObjectNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue NewObjectNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   TACList code;
   std::string new_t = generator.next_temp(current_scope, this->class_name);
@@ -925,7 +925,7 @@ std::pair<std::string, TACList> NewObjectNode::generate_tac(TACGenerator &genera
   return {new_t, code};
 }
 
-std::pair<std::string, TACList> NotNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue NotNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   TACList code;
   auto [expr_sym, expr_code] = expr->generate_tac(generator, current_scope);
@@ -935,7 +935,7 @@ std::pair<std::string, TACList> NotNode::generate_tac(TACGenerator &generator, S
   return {new_t, code};
 }
 
-std::pair<std::string, TACList> BinOpNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+TACValue BinOpNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
 {
   TACList code;
   auto [left_sym, left_code] = left->generate_tac(generator, current_scope);
