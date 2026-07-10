@@ -947,3 +947,98 @@ TACValue BinOpNode::generate_tac(TACGenerator &generator, SymbolTable &current_s
   code.push_back({op, new_t, left_sym, right_sym});
   return {new_t, code};
 }
+
+TACValue ProgramNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+{
+  TACList code;
+
+  if (main_class)
+  {
+    auto [_, main_code] = main_class->generate_tac(generator, current_scope);
+    code.insert(code.end(), main_code.begin(), main_code.end());
+  }
+
+  for (auto &c : classes)
+  {
+    if (c)
+    {
+      auto [_, class_code] = c->generate_tac(generator, current_scope);
+      code.insert(code.end(), class_code.begin(), class_code.end());
+    }
+  }
+
+  return {"", code};
+}
+
+TACValue MainMethodNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+{
+  TACList code;
+
+  code.push_back({OpCode::LABEL, name, "", ""});
+
+  if (body)
+  {
+    auto [_, body_code] = body->generate_tac(generator, current_scope);
+    code.insert(code.end(), body_code.begin(), body_code.end());
+  }
+
+  return {"", code};
+}
+
+TACValue MethodNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+{
+  TACList code;
+
+  code.push_back({OpCode::LABEL, name, "", ""});
+
+  if (body)
+  {
+    auto [_, body_code] = body->generate_tac(generator, current_scope);
+    code.insert(code.end(), body_code.begin(), body_code.end());
+  }
+
+  if (return_expr)
+  {
+    auto [ret_sym, ret_code] = return_expr->generate_tac(generator, current_scope);
+    code.insert(code.end(), ret_code.begin(), ret_code.end());
+    code.push_back({OpCode::RETURN, "", ret_sym, ""});
+  }
+
+  return {"", code};
+}
+
+TACValue ThisNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+{
+  return {"this", {}};
+}
+
+TACValue ArrayAccessNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+{
+  TACList code;
+
+  auto [arr_sym, arr_code] = array->generate_tac(generator, current_scope);
+  code.insert(code.end(), arr_code.begin(), arr_code.end());
+
+  auto [idx_sym, idx_code] = index->generate_tac(generator, current_scope);
+  code.insert(code.end(), idx_code.begin(), idx_code.end());
+
+  std::string new_t = generator.next_temp(current_scope, "int");
+  code.push_back({OpCode::ARRAY_LOAD, new_t, arr_sym, idx_sym});
+
+  return {new_t, code};
+}
+
+TACValue ArrayAssignNode::generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+{
+  TACList code;
+
+  auto [idx_sym, idx_code] = index->generate_tac(generator, current_scope);
+  code.insert(code.end(), idx_code.begin(), idx_code.end());
+
+  auto [val_sym, val_code] = value->generate_tac(generator, current_scope);
+  code.insert(code.end(), val_code.begin(), val_code.end());
+
+  code.push_back({OpCode::ARRAY_STORE, name, idx_sym, val_sym});
+
+  return {name, code};
+}

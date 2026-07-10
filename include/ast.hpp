@@ -221,6 +221,8 @@ namespace jc
       MainMethodNode() : Node(Kind::MAIN_METHOD) {}
       MainMethodNode(std::string n, std::string p, std::string r, NodePtr b) : Node(Kind::MAIN_METHOD), name(std::move(n)), param(std::move(p)), return_type(std::move(r)), body(std::move(b)) {}
 
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+
       std::string label() const override
       {
         return std::format("MainMethod[{}, args: {}, return: {}]", name, param, return_type);
@@ -264,6 +266,8 @@ namespace jc
 
       MethodNode(NodePtr r, std::string n, std::vector<ParamNode *> p, std::vector<NodePtr> l, NodePtr b, NodePtr re) : Node(Kind::METHOD), return_type(std::move(r)), name(std::move(n)), params(std::move(p)), locals(std::move(l)), body(std::move(b)), return_expr(std::move(re)) {}
 
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+
       std::string label() const override { return std::format("Method[{}]", name); }
 
       std::vector<const Node *> children() const override
@@ -292,6 +296,8 @@ namespace jc
       ProgramNode() : Node(Kind::PROGRAM) {}
 
       std::string label() const override { return "Program"; }
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -330,6 +336,8 @@ namespace jc
       ArrayAssignNode() : Node(Kind::ARRAY_ASSIGN) {}
       ArrayAssignNode(std::string name, NodePtr index, NodePtr value, u32 l = 0)
           : Node(Kind::ARRAY_ASSIGN), name(std::move(name)), index(std::move(index)), value(std::move(value)) { line = l; }
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::string label() const override { return std::format("ArrayAssign[{}]", name); }
 
@@ -450,6 +458,8 @@ namespace jc
       NodePtr index;
       ArrayAccessNode() : Node(Kind::ARRAY_ACCESS) {}
       ArrayAccessNode(NodePtr array, NodePtr index) : Node(Kind::ARRAY_ACCESS), array(std::move(array)), index(std::move(index)) {}
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::string label() const override { return "ArrayAccess"; }
 
@@ -597,6 +607,9 @@ namespace jc
     struct ThisNode : Node
     {
       ThisNode() : Node(Kind::THIS) {}
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+
       std::string label() const override { return "This"; }
     };
 
