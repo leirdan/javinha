@@ -13,6 +13,7 @@ public:
     bool printAst = false;
     bool printSymbolTable = false;
     bool debug = false;
+    bool printTac = false;
 
     bool parse(int argc, char *argv[])
     {
@@ -43,6 +44,10 @@ public:
             .help("Printa mensagens de log durante a compilação")
             .flag();
 
+        program.add_argument("--tac")
+            .help("Printa o código de três endereços gerado")
+            .flag();
+
         try
         {
             program.parse_args(argc, argv);
@@ -53,6 +58,7 @@ public:
             printAst = program.get<bool>("--ast");
             printSymbolTable = program.get<bool>("--symbol_table");
             debug = program.get<bool>("--debug");
+            printTac = program.get<bool>("--tac");
             return true;
         }
         catch (const std::exception &err)

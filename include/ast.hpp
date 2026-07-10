@@ -74,7 +74,7 @@ namespace jc
       SUB,
     };
 
-    jc::backend::OpCode get_op_code(BinOp op)
+    inline jc::backend::OpCode get_op_code(BinOp op)
     {
       switch (op)
       {

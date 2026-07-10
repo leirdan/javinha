@@ -9,6 +9,7 @@
 #include "utils.hpp"
 #include "config.hpp"
 #include "semantic.hpp"
+#include "3AC.hpp"
 
 using namespace jc;
 
@@ -77,6 +78,16 @@ int main(int argc, char *argv[])
 
   log::ast(ast);
   log::symbol_table(table);
+
+  backend::TACGenerator generator;
+  auto [_, tac_code] = ast->generate_tac(generator, table);
+
+  if (config.printTac)
+  {
+    std::cout << "\n[CÓDIGO DE TRÊS ENDEREÇOS]\n";
+    for (const auto &instr : tac_code)
+      instr.print();
+  }
 
   return 0;
 }
