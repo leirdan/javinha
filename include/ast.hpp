@@ -20,6 +20,8 @@ namespace jc
     using jc::backend::TACInstruction;
     using jc::backend::TACList;
 
+    using TACValue = std::pair<std::string, TACList>;
+
     enum class Kind : u8
     {
       // estrutura do programa
@@ -132,7 +134,8 @@ namespace jc
         print(std::cout, tabs, is_last);
       }
 
-      virtual std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) {
+      virtual TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope)
+      {
         return {"", {}};
       }
 
@@ -164,8 +167,6 @@ namespace jc
       }
     };
 
-    // Estrutura do programa
-
     struct ClassNode : Node
     {
       std::string name;
@@ -178,6 +179,8 @@ namespace jc
       {
         return std::format("Class [{} extends {}]", name, parent.value_or("None"));
       }
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -199,6 +202,7 @@ namespace jc
       MainClassNode() : Node(Kind::MAIN_CLASS) {}
 
       std::string label() const override { return std::format("MainClass [{}]", name); }
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -216,6 +220,8 @@ namespace jc
       NodePtr body;
       MainMethodNode() : Node(Kind::MAIN_METHOD) {}
       MainMethodNode(std::string n, std::string p, std::string r, NodePtr b) : Node(Kind::MAIN_METHOD), name(std::move(n)), param(std::move(p)), return_type(std::move(r)), body(std::move(b)) {}
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::string label() const override
       {
@@ -260,6 +266,8 @@ namespace jc
 
       MethodNode(NodePtr r, std::string n, std::vector<ParamNode *> p, std::vector<NodePtr> l, NodePtr b, NodePtr re) : Node(Kind::METHOD), return_type(std::move(r)), name(std::move(n)), params(std::move(p)), locals(std::move(l)), body(std::move(b)), return_expr(std::move(re)) {}
 
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+
       std::string label() const override { return std::format("Method[{}]", name); }
 
       std::vector<const Node *> children() const override
@@ -288,6 +296,8 @@ namespace jc
       ProgramNode() : Node(Kind::PROGRAM) {}
 
       std::string label() const override { return "Program"; }
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -318,8 +328,6 @@ namespace jc
       }
     };
 
-    // Comandos
-
     struct ArrayAssignNode : Node
     {
       std::string name;
@@ -328,6 +336,8 @@ namespace jc
       ArrayAssignNode() : Node(Kind::ARRAY_ASSIGN) {}
       ArrayAssignNode(std::string name, NodePtr index, NodePtr value, u32 l = 0)
           : Node(Kind::ARRAY_ASSIGN), name(std::move(name)), index(std::move(index)), value(std::move(value)) { line = l; }
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::string label() const override { return std::format("ArrayAssign[{}]", name); }
 
@@ -350,7 +360,7 @@ namespace jc
       AssignNode(std::string name, NodePtr value, u32 l = 0) : Node(Kind::ASSIGN), name(std::move(name)), value(std::move(value)) { line = l; }
 
       std::string label() const override { return std::format("Assign[{}]", name); }
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -367,7 +377,7 @@ namespace jc
       BlockNode(std::vector<NodePtr> stmt) : Node(Kind::BLOCK), stmt(std::move(stmt)) {}
 
       std::string label() const override { return "Block"; }
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -389,7 +399,7 @@ namespace jc
           : Node(Kind::IF), cond(std::move(cond)), then_branch(std::move(then)), else_branch(std::move(else_b)) {}
 
       std::string label() const override { return "If"; }
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -411,7 +421,7 @@ namespace jc
       PrintNode(NodePtr expr) : Node(Kind::PRINT), expr(std::move(expr)) {}
 
       std::string label() const override { return "Print"; }
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -429,7 +439,7 @@ namespace jc
       WhileNode(NodePtr cond, NodePtr body) : Node(Kind::WHILE), cond(std::move(cond)), body(std::move(body)) {}
 
       std::string label() const override { return "While"; }
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -442,14 +452,14 @@ namespace jc
       }
     };
 
-    // Expressões
-
     struct ArrayAccessNode : Node
     {
       NodePtr array;
       NodePtr index;
       ArrayAccessNode() : Node(Kind::ARRAY_ACCESS) {}
       ArrayAccessNode(NodePtr array, NodePtr index) : Node(Kind::ARRAY_ACCESS), array(std::move(array)), index(std::move(index)) {}
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::string label() const override { return "ArrayAccess"; }
 
@@ -483,19 +493,7 @@ namespace jc
         return result;
       }
 
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override 
-      {
-        auto [left_sym, left_code] = left->generate_tac(generator, current_scope);
-        auto [right_sym, right_code] = right->generate_tac(generator, current_scope);
-
-        auto new_t = generator.next_temp(current_scope, "int");
-        TACList code = left_code;
-        code.insert(code.end(), right_code.begin(), right_code.end());
-
-        auto op = get_op_code(this->op);
-        code.push_back({op, new_t, left_sym, right_sym});
-        return {new_t, code};
-      }
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct BoolNode : Node
@@ -503,7 +501,7 @@ namespace jc
       bool value;
       explicit BoolNode(bool v) : Node(Kind::BOOL), value(v) {}
       std::string label() const override { return std::format("Bool[{}]", value ? "true" : "false"); }
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct IdentifierNode : Node
@@ -511,7 +509,7 @@ namespace jc
       std::string name;
       explicit IdentifierNode(std::string n, u32 l = 0) : Node(Kind::IDENTIFIER), name(std::move(n)) { line = l; }
       std::string label() const override { return std::format("Id[{}]", name); }
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct LengthNode : Node
@@ -528,6 +526,7 @@ namespace jc
           return {obj.get()};
         return {};
       }
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct MethodCallNode : Node
@@ -539,7 +538,7 @@ namespace jc
       MethodCallNode(NodePtr obj, std::string method, std::vector<NodePtr> args, u32 l = 0) : Node(Kind::METHOD_CALL), obj(std::move(obj)), method(std::move(method)), args(std::move(args)) { line = l; }
 
       std::string label() const override { return std::format("MethodCall[{}]", method); }
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
 
       std::vector<const Node *> children() const override
       {
@@ -567,6 +566,7 @@ namespace jc
           return {size.get()};
         return {};
       }
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct NewObjectNode : Node
@@ -576,6 +576,7 @@ namespace jc
       NewObjectNode(std::string class_name, u32 l = 0) : Node(Kind::NEW_OBJECT), class_name(std::move(class_name)) { line = l; }
 
       std::string label() const override { return std::format("NewObject[{}]", class_name); }
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct NotNode : Node
@@ -592,6 +593,7 @@ namespace jc
           return {expr.get()};
         return {};
       }
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct NumberNode : Node
@@ -599,12 +601,15 @@ namespace jc
       i32 value;
       NumberNode(i32 v) : Node(Kind::NUMBER), value(v) {}
       std::string label() const override { return std::format("Number[{}]", value); }
-      std::pair<std::string, TACList> generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
     };
 
     struct ThisNode : Node
     {
       ThisNode() : Node(Kind::THIS) {}
+
+      TACValue generate_tac(TACGenerator &generator, SymbolTable &current_scope) override;
+
       std::string label() const override { return "This"; }
     };
 

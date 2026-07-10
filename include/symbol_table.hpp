@@ -160,7 +160,6 @@ namespace jc
       return current_scope->insert(Symbol(id, type, category, line));
     }
 
-    // funcao essencial pra analise semantica verificar variaveis nao declaradas por ex.!
     std::optional<Symbol> lookup(const std::string &id)
     {
       auto scope = current_scope;
