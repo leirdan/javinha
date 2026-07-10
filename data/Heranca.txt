@@ -2,7 +2,7 @@
 
 class Programa {
     public static void main(String[] sleep){
-	    System.out.println(new Sort().sort());
+	    System.out.println(new Sort().Sort());
     }
 }
 
@@ -11,7 +11,7 @@ class Base {
   public int Print1() {
     return 1;
   }
-  public int Print2(boolean x) {
+  public int Print2(int x) {
     int aux;
     if (x > this.Print1()) {
       aux = 2;
@@ -31,7 +31,7 @@ class Base {
 
 class Sort extends Base {
   public int Sort() {
-    baseNumber = this.Print2(true);
+    baseNumber = this.Print2(1);
     return baseNumber;
   }
 }

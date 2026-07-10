@@ -217,26 +217,28 @@ namespace jc
       return std::nullopt;
     }
 
-    // Retorna os tipos dos parâmetros na ordem de declaração
     std::vector<std::string> get_method_param_types(const std::string &class_name, const std::string &method_name)
     {
       std::vector<std::string> result;
-      auto it = class_scopes.find(class_name);
-      if (it == class_scopes.end())
-        return result;
-      auto &class_scope = it->second;
-      for (auto &child : class_scope->children)
+      std::string current = class_name;
+
+      while (!current.empty() && class_scopes.contains(current))
       {
-        if (child->name == method_name)
+        auto &class_scope = class_scopes[current];
+        for (auto &child : class_scope->children)
         {
-          for (const auto &param_name : child->param_order)
+          if (child->name == method_name)
           {
-            auto sym_it = child->symbols.find(param_name);
-            if (sym_it != child->symbols.end() && sym_it->second.type.has_value())
-              result.push_back(*sym_it->second.type);
+            for (const auto &param_name : child->param_order)
+            {
+              auto sym_it = child->symbols.find(param_name);
+              if (sym_it != child->symbols.end() && sym_it->second.type.has_value())
+                result.push_back(*sym_it->second.type);
+            }
+            return result;
           }
-          return result;
         }
+        current = class_scope->parent_class.value_or("");
       }
       return result;
     }
