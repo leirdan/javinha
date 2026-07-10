@@ -27,6 +27,11 @@ namespace jc
     struct PTNode;
     struct ParserError;
   }
+  namespace backend
+  {
+    struct TACInstruction;
+    using TACList = std::vector<TACInstruction>;
+  }
 
   enum class TokenType : u8;
   enum class SymbolCategory : u8;
@@ -59,5 +64,6 @@ namespace jc
     void parse_tree(const jc::parser::PTree &root, int indent = 0, std::ostream &stream = std::cout);
     void ast(const jc::ast::NodePtr &node, std::ostream &stream = std::cout);
     void symbol_table(const jc::SymbolTable &table, std::ostream &stream = std::cout);
+    void tac_code(const jc::backend::TACList &code, std::ostream &stream = std::cout);
   }
 }

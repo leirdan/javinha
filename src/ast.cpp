@@ -380,7 +380,6 @@ std::vector<ParamNode *> AST::args(const PTNode &root)
 
   if (current_type != nullptr && !param_name.empty())
   {
-    // TODO: Cuidar com o vazamento aqui no futuro, já que ParamNode* é devolvido em um vector de ponteiros crus
     auto *param_node = new ParamNode(std::move(current_type), param_name);
     v.push_back(param_node);
   }

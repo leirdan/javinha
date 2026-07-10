@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 {
   if (!config.parse(argc, argv))
   {
-    std::cerr << "usage: ./javinha input.ling output.txt [--flag]\n";
+    std::cerr << "usage: ./javinha input.ling output.txt [--flags]\n";
     return EXIT_FAILURE;
   }
 
@@ -69,7 +69,8 @@ int main(int argc, char *argv[])
   semantic::SemanticAnalyzer analyzer(table);
   analyzer.analyze(ast);
 
-  if (analyzer.has_errors()) {
+  if (analyzer.has_errors())
+  {
     std::cout << "Erros semânticos encontrados:\n";
     for (const auto &e : analyzer.get_errors())
       std::cout << e.to_string() << "\n";
@@ -81,13 +82,7 @@ int main(int argc, char *argv[])
 
   backend::TACGenerator generator;
   auto [_, tac_code] = ast->generate_tac(generator, table);
-
-  if (config.printTac)
-  {
-    std::cout << "\n[CÓDIGO DE TRÊS ENDEREÇOS]\n";
-    for (const auto &instr : tac_code)
-      instr.print();
-  }
+  log::tac_code(tac_code);
 
   return 0;
 }

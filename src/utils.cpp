@@ -90,6 +90,16 @@ void jc::log::parse_tree(const jc::parser::PTree &root, int indent, std::ostream
   }
 }
 
+void jc::log::tac_code(const jc::backend::TACList &code, std::ostream &stream)
+{
+  if (config.printTac)
+  {
+    std::cout << "\n[CÓDIGO DE TRÊS ENDEREÇOS]\n";
+    for (const auto &instr : code)
+      instr.print();
+  }
+}
+
 std::string jc::to_string(jc::TokenType t)
 {
   switch (t)
