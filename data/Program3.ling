@@ -34,11 +34,11 @@ return 55 ;
     public int Procurando(int num){
 		int j ; boolean ls01 ; int achou ; int aux01 ; int aux02 ; int nt ;
 j = 1 ;
-ls01 = false ;
+ls01 = false ; 
 achou = 0 ;
 	
 	//System.out.println(num);
-	while (size > j) {aux01 = number[j] ;aux02 = num + 1 ;if (num > aux01) nt = 0 ;
+	while (size > j && size > j) {aux01 = number[j] ;aux02 = num + 1 ;if (num > aux01) nt = 0 ;
 	    else if (!(aux02 > aux01)) nt = 0 ;
 	    else {ls01 = true ;achou = 1 ;j = size ;}
 	    j = j + 1 ;

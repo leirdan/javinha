@@ -1,0 +1,63 @@
+class Prog {
+    public static void main(String[] a) {
+        System.out.println(new Processador().Start(5));
+    }
+}
+
+class Processador {
+    int[] number;
+    int size;
+
+    public int Start(int sz) {
+        int aux01;
+        int aux02;
+
+        aux01 = this.Init(sz);
+        aux02 = this.Print();
+        System.out.println(8888);
+        System.out.println(this.Modificar(2));
+
+        return 0;
+    }
+
+    public int Modificar(int fator) {
+        int j;
+        int aux01;
+        int nt;
+
+        j = 0;
+        while (size > j) {
+            aux01 = number[j];
+            if (aux01 > fator) {
+                number[j] = aux01 * fator;
+            } else {
+                nt = 0;
+            }
+            j = j + 1;
+        }
+        return 1;
+    }
+
+    public int Print() {
+        int j;
+        j = 0;
+        while (size > j) {
+            System.out.println(number[j]);
+            j = j + 1;
+        }
+        return 0;
+    }
+
+    public int Init(int sz) {
+        size = sz;
+        number = new int[sz];
+
+        number[0] = 50;
+        number[1] = 40;
+        number[2] = 30;
+        number[3] = 20;
+        number[4] = 10;
+
+        return 0;
+    }
+}

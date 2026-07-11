@@ -1,0 +1,25 @@
+class Erro {
+    public static void main(String[] a) {
+        System.out.println(new Verificador().Start(10));
+    }
+}
+
+class Verificador {
+    int size;
+    int[] number;
+
+    public int Start(int sz) {
+        int aux01;
+        int aux02;
+        boolean saida;
+        size = sz;
+        aux01 = 0;
+        if (size) {
+            aux02 = 1;
+        } else {
+            aux02 = 0;
+        }
+
+        return saida;
+    }
+}

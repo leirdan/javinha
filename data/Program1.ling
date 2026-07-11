@@ -3,7 +3,7 @@
 **/
 class Programa{
     public static void main(String[] a){
-	    System.out.println(new Fac().funcao1(10));
+	    System.out.println(new Funcao().funcao1(10));
     }
 }
 
@@ -19,7 +19,7 @@ class Funcao {
 	        n_aux = 1 ;
 	    else
             // Aqui tem algo
-	        n_aux = num * (this.ComputeFac(num-1)) ;
+	        n_aux = num * (this.funcao1(num-1)) ;
 	    return n_aux ;
     }
 
